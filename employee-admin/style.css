@@ -1,3 +1,4 @@
+@media (min-width: 901px) {
 @font-face {
     font-family: 'Google Sans Flex';
     src: url('assets/fonts/google-sans-flex/GoogleSansFlex-400.ttf') format('truetype');
@@ -44,6 +45,7 @@
     font-weight: 900;
     font-style: normal;
     font-display: swap;
+}
 }
 
 :root {

@@ -184,6 +184,7 @@ const AuthManager = {
             try {
                 const storedUser = AuthManager.getStoredUser();
                 AuthManager.updateSidebarUser(storedUser ? { ...storedUser, profile_image: null } : null);
+                window.LayoutManager?.ensureMobileChrome?.();
 
                 const page = window.AppNavigation?.getCurrentView?.() || 'attendance';
 

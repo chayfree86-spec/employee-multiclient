@@ -253,6 +253,51 @@ window.AppNavigation = {
         settings: 'settings.html'
     },
 
+    scriptVersions: {
+        staff: '20260525-27',
+        attendance: '20260525-7',
+        salary: '20260525-14',
+        reports: '20260525-3',
+        settings: '20260525-4'
+    },
+
+    loadedScripts: new Set(Array.from(document.scripts)
+        .map((script) => script.getAttribute('src') || '')
+        .filter(Boolean)
+        .map((src) => src.split('?')[0].split('/').pop())),
+
+    loadScript: (filename) => {
+        if (AppNavigation.loadedScripts.has(filename)) return Promise.resolve();
+
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `js/min/${filename}?v=${AppNavigation.scriptVersions[filename.replace('.js', '')] || Date.now()}`;
+            script.defer = true;
+            script.onload = () => {
+                AppNavigation.loadedScripts.add(filename);
+                resolve();
+            };
+            script.onerror = () => reject(new Error(`Failed to load ${filename}`));
+            document.body.appendChild(script);
+        });
+    },
+
+    ensureViewBundle: async (viewId) => {
+        const bundles = {
+            dashboard: ['reports.js'],
+            staff: ['salary.js', 'reports.js', 'attendance.js', 'staff.js'],
+            'staff-profile': ['salary.js', 'reports.js', 'attendance.js', 'staff.js'],
+            attendance: ['attendance.js'],
+            salary: ['staff.js', 'salary.js'],
+            reports: ['salary.js', 'reports.js'],
+            settings: ['settings.js']
+        };
+
+        for (const filename of bundles[viewId] || []) {
+            await AppNavigation.loadScript(filename);
+        }
+    },
+
     getCurrentView: () => {
         const requestedView = new URLSearchParams(window.location.search).get('view');
         if (requestedView && AppNavigation.viewToFile[requestedView]) return requestedView;
@@ -289,6 +334,7 @@ window.AppNavigation = {
     go: async (viewId, data = null, options = {}) => {
         if (!AppNavigation.viewToFile[viewId]) return switchView(viewId, data);
 
+        await AppNavigation.ensureViewBundle(viewId);
         await switchView(viewId, data);
         const nextUrl = AppNavigation.urlForView(viewId);
         if (options.replace) {
@@ -375,7 +421,6 @@ function initApp() {
         });
     }
 
-    LayoutManager.ensureMobileChrome();
     AppNavigation.bindLinks();
 
     window.addEventListener('popstate', () => {
@@ -393,6 +438,8 @@ function initApp() {
 }
 
 async function switchView(viewId, data = null) {
+    await AppNavigation.ensureViewBundle(viewId);
+
     if (window.currentView === 'attendance' && viewId !== 'attendance' && window.AttendanceManager?.flushPendingSave) {
         await window.AttendanceManager.flushPendingSave();
     }
@@ -955,3 +1002,4 @@ window.SyncStatus = {
         el.className = 'sync-status-chip hidden';
     }
 };
+

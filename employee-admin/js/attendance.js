@@ -185,13 +185,13 @@ const AttendanceManager = {
                         </div>
                     </div>
                     <div class="attendance-actions" style="display:flex; gap:1rem; width:100%;">
-                        <button id="btn-mark-present" class="btn-primary" onclick="AttendanceManager.markAll('present')" style="background:rgba(0, 184, 148, 0.1); color:var(--success); border:1px solid rgba(0, 184, 148, 0.2); display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
+                        <button id="btn-mark-present" class="btn-primary" onclick="AttendanceManager.markAll('present')" style="background:#e8f8f4; color:#006b55; border:1px solid #80d8c7; display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
                             <i class="fas fa-check-double"></i> Mark All Present
                         </button>
-                        <button id="btn-mark-holiday" class="btn-primary" onclick="AttendanceManager.markAll('holiday')" style="background:rgba(10, 189, 227, 0.1); color:var(--info); border:1px solid rgba(10, 189, 227, 0.2); display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
+                        <button id="btn-mark-holiday" class="btn-primary" onclick="AttendanceManager.markAll('holiday')" style="background:#e8f4fb; color:#075985; border:1px solid #93c5fd; display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
                             <i class="fas fa-mug-hot"></i> Mark All Weekly Off
                         </button>
-                        <button id="btn-mark-absent" class="btn-primary" onclick="AttendanceManager.markAll('absent')" style="background:rgba(214, 48, 49, 0.1); color:var(--danger); border:1px solid rgba(214, 48, 49, 0.2); display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
+                        <button id="btn-mark-absent" class="btn-primary" onclick="AttendanceManager.markAll('absent')" style="background:#fff0f0; color:#a11218; border:1px solid #f2a2a4; display:flex; align-items:center; justify-content:center; gap:8px; padding: 0.6rem 1.2rem; font-weight: 700; transition: all 0.3s ease;">
                             <i class="fas fa-user-times"></i> Mark All Absent
                         </button>
                     </div>
@@ -218,8 +218,32 @@ const AttendanceManager = {
             </div>
         `;
 
-        // Initialize Flatpickr
-        flatpickr("#attendance-date", {
+        AttendanceManager.initDatePicker();
+        AttendanceManager.loadAttendanceList();
+        AttendanceManager.updateStats();
+    },
+
+    initDatePicker: () => {
+        const input = document.getElementById('attendance-date');
+        if (!input) return;
+
+        const selectedDate = AttendanceManager.parseLocalDate(AttendanceManager.currentDate) || new Date();
+        AttendanceManager.updateWeekdayDisplay(selectedDate);
+        AttendanceManager.updateDateSelectionState(selectedDate);
+        input.addEventListener('change', () => {
+            if (!input.value) return;
+            AttendanceManager.currentDate = input.value;
+            const date = AttendanceManager.parseLocalDate(input.value);
+            AttendanceManager.loadAttendanceList();
+            AttendanceManager.updateWeekdayDisplay(date);
+            AttendanceManager.updateDateSelectionState(date);
+        });
+
+        window.setTimeout(async () => {
+            await AttendanceManager.ensureFlatpickr();
+            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
+
+            flatpickr("#attendance-date", {
             defaultDate: AttendanceManager.currentDate,
             maxDate: "today",
             dateFormat: "Y-m-d",
@@ -247,10 +271,32 @@ const AttendanceManager = {
                 AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
                 AttendanceManager.updateDateSelectionState(selectedDates[0]);
             }
+            });
+        }, 4000);
+    },
+
+    ensureFlatpickr: () => {
+        if (typeof flatpickr === 'function') return Promise.resolve();
+        if (AttendanceManager._flatpickrPromise) return AttendanceManager._flatpickrPromise;
+
+        const cssHref = 'assets/lib/flatpickr/flatpickr.min.css?v=20260525-1';
+        if (!document.querySelector(`link[href="${cssHref}"]`)) {
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = cssHref;
+            document.head.appendChild(css);
+        }
+
+        AttendanceManager._flatpickrPromise = new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'assets/lib/flatpickr/flatpickr.min.js?v=20260525-1';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.body.appendChild(script);
         });
 
-        AttendanceManager.loadAttendanceList();
-        AttendanceManager.updateStats();
+        return AttendanceManager._flatpickrPromise;
     },
 
     loadAttendanceList: async () => {
