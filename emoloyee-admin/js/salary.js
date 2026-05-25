@@ -9,20 +9,42 @@ const SalaryManager = {
     },
 
     getAllowedMonthIndexes: (year) => {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const maxMonth = year >= currentYear ? now.getMonth() : 11;
+        const previousPeriod = SalaryManager.getPreviousMonthYear();
+        const selectedYear = Number(year);
+        if (selectedYear > previousPeriod.year) return [];
+        const maxMonth = selectedYear === previousPeriod.year ? previousPeriod.month : 11;
         return Array.from({ length: maxMonth + 1 }, (_, index) => index);
     },
 
     getAllowedYears: (selectedYear = null) => {
-        const currentYear = new Date().getFullYear();
-        const safeSelectedYear = selectedYear !== null ? Math.min(selectedYear, currentYear) : null;
-        const years = [currentYear, currentYear - 1];
-        if (safeSelectedYear !== null && safeSelectedYear < currentYear - 1) {
+        const previousPeriod = SalaryManager.getPreviousMonthYear();
+        const maxYear = previousPeriod.year;
+        const safeSelectedYear = selectedYear !== null ? Math.min(selectedYear, maxYear) : null;
+        const years = [maxYear, maxYear - 1];
+        if (safeSelectedYear !== null && safeSelectedYear < maxYear - 1) {
             years.push(safeSelectedYear);
         }
         return Array.from(new Set(years)).sort((a, b) => b - a);
+    },
+
+    syncSalaryMonthOptions: () => {
+        const monthEl = document.getElementById('salary-month');
+        const yearEl = document.getElementById('salary-year');
+        if (!monthEl || !yearEl) return;
+
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const selectedYear = Number(yearEl.value);
+        const allowedMonths = SalaryManager.getAllowedMonthIndexes(selectedYear);
+        const currentValue = Number(monthEl.value);
+        const nextValue = allowedMonths.includes(currentValue)
+            ? currentValue
+            : (allowedMonths[allowedMonths.length - 1] ?? SalaryManager.getPreviousMonthYear().month);
+
+        monthEl.innerHTML = allowedMonths.slice().reverse()
+            .map((monthIndex) => `<option value="${monthIndex}">${months[monthIndex]}</option>`)
+            .join('');
+        monthEl.value = String(nextValue);
+        monthEl.parentElement?._refreshCustomDropdown?.();
     },
 
     getPreviousMonthYear: () => {
@@ -35,25 +57,7 @@ const SalaryManager = {
         };
     },
 
-    getDefaultSalaryPeriod: async () => {
-        const now = new Date();
-        const currentPeriod = {
-            month: now.getMonth(),
-            year: now.getFullYear()
-        };
-        const previousPeriod = SalaryManager.getPreviousMonthYear();
-
-        try {
-            const payrollRows = await ApiClient.listPayroll(currentPeriod.month + 1, currentPeriod.year);
-            if (Array.isArray(payrollRows) && payrollRows.length > 0) {
-                return currentPeriod;
-            }
-        } catch (error) {
-            console.warn('Could not check current month payroll status', error);
-        }
-
-        return previousPeriod;
-    },
+    getDefaultSalaryPeriod: async () => SalaryManager.getPreviousMonthYear(),
 
     initializeSalaryPeriod: async () => {
         const monthEl = document.getElementById('salary-month');
@@ -63,7 +67,15 @@ const SalaryManager = {
         const period = await SalaryManager.getDefaultSalaryPeriod();
         monthEl.value = String(period.month);
         yearEl.value = String(period.year);
+        SalaryManager.syncSalaryMonthOptions();
+        monthEl.parentElement?._refreshCustomDropdown?.();
+        yearEl.parentElement?._refreshCustomDropdown?.();
         await SalaryManager.refreshSalaryList();
+    },
+
+    handleSalaryYearChange: () => {
+        SalaryManager.syncSalaryMonthOptions();
+        SalaryManager.refreshSalaryList();
     },
 
     getSelectedMonthYear: (fallbackMonth = null, fallbackYear = null) => {
@@ -112,14 +124,14 @@ const SalaryManager = {
                             <i class="fas fa-calendar-alt" style="position:absolute; left:12px; color:var(--primary); font-size:0.9rem; pointer-events:none;"></i>
                             <select id="salary-month" onchange="SalaryManager.refreshSalaryList()" 
                                 style="appearance:none; -webkit-appearance:none; padding:10px 35px 10px 35px; border-radius:12px; border:1px solid transparent; background:var(--bg-main); color:var(--text-main); font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.2s ease; min-width:150px;">
-                                ${months.map((m, i) => `<option value="${i}" ${i === initialPeriod.month ? 'selected' : ''}>${m}</option>`).join('')}
+                                ${SalaryManager.getAllowedMonthIndexes(initialPeriod.year).slice().reverse().map((i) => `<option value="${i}" ${i === initialPeriod.month ? 'selected' : ''}>${months[i]}</option>`).join('')}
                             </select>
                             <i class="fas fa-chevron-down" style="position:absolute; right:12px; color:var(--text-muted); font-size:0.7rem; pointer-events:none;"></i>
                         </div>
                         <div class="salary-filter-divider" style="width:1px; height:20px; background:var(--border);"></div>
                         <div class="salary-filter-control" style="position:relative; display:flex; align-items:center;">
                             <i class="fas fa-clock" style="position:absolute; left:12px; color:var(--primary); font-size:0.9rem; pointer-events:none;"></i>
-                            <select id="salary-year" onchange="SalaryManager.refreshSalaryList()" 
+                            <select id="salary-year" onchange="SalaryManager.handleSalaryYearChange()" 
                                 style="appearance:none; -webkit-appearance:none; padding:10px 35px 10px 35px; border-radius:12px; border:1px solid transparent; background:var(--bg-main); color:var(--text-main); font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.2s ease;">
                                 ${SalaryManager.getAllowedYears(initialPeriod.year).map((year) => `<option value="${year}" ${year === initialPeriod.year ? 'selected' : ''}>${year}</option>`).join('')}
                             </select>
@@ -203,6 +215,8 @@ const SalaryManager = {
             </div>
         `;
 
+        setupCustomDropdown('salary-month');
+        setupCustomDropdown('salary-year');
         SalaryManager.initializeSalaryPeriod();
     },
 
@@ -1501,7 +1515,7 @@ const SalaryManager = {
         setTimeout(() => win.print(), 500);
     },
 
-    downloadPDF: (name, month) => {
+    downloadPDF: async (name, month) => {
         const element = document.getElementById('salary-slip-print');
         const previousTransform = element?.style.transform || '';
         const previousTransformOrigin = element?.style.transformOrigin || '';
@@ -1516,6 +1530,7 @@ const SalaryManager = {
             html2canvas: { scale: 2 },
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
+        const html2pdf = await window.loadHtml2Pdf();
         Promise.resolve(html2pdf().set(opt).from(element).save()).finally(() => {
             if (!element) return;
             element.style.transform = previousTransform;
@@ -1593,7 +1608,7 @@ const SalaryManager = {
             </div>`;
 
         return `
-            <div id="salary-slip-print" class="salary-slip" style="padding:16px; border:1px solid #ddd; border-radius:14px; background:#fff; color:#333; font-family:'Inter', sans-serif;">
+            <div id="salary-slip-print" class="salary-slip" style="padding:16px; border:1px solid #ddd; border-radius:14px; background:#fff; color:#333; font-family:var(--app-font);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid #eee;">
                     <div>
                         <div style="font-size:0.78rem; color:var(--text-muted); font-weight:900; text-transform:uppercase;">Salary Slip</div>
@@ -1676,7 +1691,7 @@ const SalaryManager = {
         const contactLine = contactParts.join(' | ');
 
         return `
-            <div id="salary-slip-print" class="salary-slip" style="padding:38px; border:1px solid #ddd; border-radius:16px; background:#fff; color:#333; font-family:'Inter', sans-serif; line-height:1.58; overflow:visible;">
+            <div id="salary-slip-print" class="salary-slip" style="padding:38px; border:1px solid #ddd; border-radius:16px; background:#fff; color:#333; font-family:var(--app-font); line-height:1.58; overflow:visible;">
                 <!-- Business Header -->
                 <div style="text-align:center; margin-bottom:28px; border-bottom:2px solid var(--primary); padding-bottom:18px;">
                     <h1 style="margin:0; font-size:2rem; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">${businessName}</h1>
@@ -1824,6 +1839,7 @@ const SalaryManager = {
         tempContainer.style.top = '0';
         document.body.appendChild(tempContainer);
 
+        const html2pdf = await window.loadHtml2Pdf();
         html2pdf().set(opt).from(tempContainer).save().then(() => {
             document.body.removeChild(tempContainer);
         });

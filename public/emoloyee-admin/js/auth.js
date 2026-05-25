@@ -24,10 +24,14 @@ const AuthManager = {
         if (!sidebarName || !sidebarRole || !sidebarAvatar) return;
 
         const currentUser = user || AuthManager.getStoredUser();
-        const displayName = currentUser?.username || currentUser?.name || 'Admin User';
+        const displayName = window.BrandingManager?.getCafeName?.()
+            || currentUser?.business_name
+            || currentUser?.name
+            || currentUser?.username
+            || 'Admin User';
         const displayRole = currentUser?.role || 'Administrator';
         const encodedName = encodeURIComponent(displayName);
-        const avatarSrc = currentUser?.profile_image || window.PhotoHelper.avatarUrl(encodedName, 'C8A97E', 'fff', 48);
+        const avatarSrc = window.PhotoHelper.normalizeImageUrl(currentUser?.profile_image) || window.PhotoHelper.avatarUrl(encodedName, 'C8A97E', 'fff', 48);
 
         sidebarName.textContent = displayName;
         sidebarRole.textContent = displayRole;
@@ -35,6 +39,7 @@ const AuthManager = {
             window.PhotoHelper.applyFallback(this, encodedName, 'C8A97E', 'fff', 48);
         };
         sidebarAvatar.src = avatarSrc;
+        window.BrandingManager?.applyBranding?.();
     },
 
     getUsernameFromToken: () => {
@@ -57,10 +62,8 @@ const AuthManager = {
 
     resolveCurrentUser: async () => {
         const storedUser = AuthManager.getStoredUser();
-        if (storedUser?.id) return storedUser;
-
         const username = AuthManager.getFallbackUsername();
-        if (!username) return null;
+        if (!username) return storedUser || null;
 
         try {
             const resolvedUser = await ApiClient.getProfile({ username });
@@ -84,13 +87,17 @@ const AuthManager = {
             return;
         }
 
-        const displayName = currentUser?.username || currentUser?.name || 'Admin User';
+        const displayName = window.BrandingManager?.getCafeName?.()
+            || currentUser?.business_name
+            || currentUser?.name
+            || currentUser?.username
+            || 'Admin User';
         const encodedName = encodeURIComponent(displayName);
         const content = `
             <form id="admin-photo-upload-form" onsubmit="AuthManager.handleProfileImageSubmit(event)">
                 <div style="text-align:center; margin-bottom:1.5rem;">
                     <div style="position:relative; width:120px; height:120px; margin:0 auto; border-radius:28px; overflow:hidden; border:2px dashed var(--primary); display:flex; align-items:center; justify-content:center; background:rgba(62, 39, 35, 0.05);">
-                        <img id="admin-photo-upload-preview" src="${currentUser?.profile_image || window.PhotoHelper.avatarUrl(encodedName, 'C8A97E', 'fff', 120)}" alt="${displayName} profile photo preview" onerror="window.PhotoHelper.applyFallback(this, '${encodedName}', 'C8A97E', 'fff', 120)" style="width:100%; height:100%; object-fit:cover;">
+                        <img id="admin-photo-upload-preview" src="${window.PhotoHelper.normalizeImageUrl(currentUser?.profile_image) || window.PhotoHelper.avatarUrl(encodedName, 'C8A97E', 'fff', 120)}" alt="${displayName} profile photo preview" onerror="window.PhotoHelper.applyFallback(this, '${encodedName}', 'C8A97E', 'fff', 120)" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                     <p style="margin:1rem 0 0; color:var(--text-muted); font-weight:600;">${displayName}</p>
                     <p style="margin:0.25rem 0 0; color:var(--text-muted); font-size:0.85rem;">${currentUser?.role || 'Administrator'}</p>
@@ -152,10 +159,12 @@ const AuthManager = {
             const result = await ApiClient.uploadProfileImage(currentUser.id, selectedFile);
             const updatedUser = {
                 ...currentUser,
-                profile_image: result?.profile_image || currentUser.profile_image
+                profile_image: window.PhotoHelper.normalizeImageUrl(result?.profile_image || currentUser.profile_image)
             };
             sessionStorage.setItem(AuthManager.storageKey('user'), JSON.stringify(updatedUser));
+            StorageManager.save('business_logo', updatedUser.profile_image || '');
             AuthManager.updateSidebarUser(updatedUser);
+            window.BrandingManager?.applyBranding?.();
             ModalManager.hide();
             alert('Profile photo updated');
         } catch (error) {
@@ -169,15 +178,14 @@ const AuthManager = {
         const appContainer = document.getElementById('app-container');
 
         if (isLoggedIn === 'true') {
+            document.body.classList.add('is-authenticated');
             loginContainer.classList.add('hidden');
             appContainer.classList.remove('hidden');
             try {
-                AuthManager.updateSidebarUser();
+                const storedUser = AuthManager.getStoredUser();
+                AuthManager.updateSidebarUser(storedUser ? { ...storedUser, profile_image: null } : null);
 
-                // Get page name first
-                const path = window.location.pathname;
-                let page = path.substring(path.lastIndexOf('/') + 1).replace('.html', '');
-                if (!page || page === 'index') page = 'dashboard';
+                const page = window.AppNavigation?.getCurrentView?.() || 'attendance';
 
                 // Show UI immediately
                 switchView(page);
@@ -191,15 +199,42 @@ const AuthManager = {
                 sessionStorage.removeItem(AuthManager.storageKey('token'));
                 sessionStorage.removeItem(AuthManager.storageKey('username'));
                 sessionStorage.removeItem(AuthManager.storageKey('user'));
+                document.body.classList.remove('is-authenticated');
                 alert(`API connection failed: ${error.message}`);
                 loginContainer.classList.remove('hidden');
                 appContainer.classList.add('hidden');
                 AuthManager.initLoginForm();
             }
         } else {
+            document.body.classList.remove('is-authenticated');
             loginContainer.classList.remove('hidden');
             appContainer.classList.add('hidden');
+            AuthManager.renderUserLogin();
             AuthManager.initLoginForm();
+        }
+    },
+
+    renderUserLogin: () => {
+        document.querySelectorAll('.login-header h1').forEach((el) => {
+            el.textContent = 'User Login';
+        });
+        document.querySelectorAll('.login-header p').forEach((el) => {
+            el.textContent = 'Enter your account details to continue.';
+        });
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const canRememberPassword = window.innerWidth <= 900;
+        const rememberedUsername = localStorage.getItem(AuthManager.storageKey('last_login_identifier')) || '';
+        const rememberedPassword = canRememberPassword
+            ? (localStorage.getItem(AuthManager.storageKey('last_login_password')) || '')
+            : '';
+        if (username) {
+            username.value = rememberedUsername;
+            username.setAttribute('autocomplete', 'username');
+        }
+        if (password) {
+            password.value = rememberedPassword;
+            password.setAttribute('autocomplete', 'current-password');
         }
     },
 
@@ -221,6 +256,10 @@ const AuthManager = {
                 sessionStorage.setItem(AuthManager.storageKey('token'), loginData?.token || '');
                 sessionStorage.setItem(AuthManager.storageKey('username'), loginData?.user?.username || user);
                 sessionStorage.setItem(AuthManager.storageKey('user'), JSON.stringify(loginData?.user || { username: user, role: 'Administrator' }));
+                localStorage.setItem(AuthManager.storageKey('last_login_identifier'), user);
+                if (window.innerWidth <= 900) {
+                    localStorage.setItem(AuthManager.storageKey('last_login_password'), pass);
+                }
                 AuthManager.updateSidebarUser(loginData?.user || { username: user, role: 'Administrator' });
                 await ApiSyncManager.bootstrap(true);
                 await AuthManager.checkStatus();

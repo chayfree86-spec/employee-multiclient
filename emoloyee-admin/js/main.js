@@ -116,28 +116,77 @@ window.LayoutManager = {
     }
 };
 
+window.AppNavigation = {
+    viewToFile: {
+        dashboard: 'index.html',
+        staff: 'staff.html',
+        attendance: 'attendance.html',
+        salary: 'salary.html',
+        reports: 'reports.html',
+        settings: 'settings.html'
+    },
+
+    getCurrentView: () => {
+        const requestedView = new URLSearchParams(window.location.search).get('view');
+        if (requestedView && AppNavigation.viewToFile[requestedView]) return requestedView;
+
+        const file = window.location.pathname.split('/').pop() || 'index.html';
+        if (file === 'index.html') return 'attendance';
+
+        const view = Object.entries(AppNavigation.viewToFile)
+            .find(([, filename]) => filename === file)?.[0];
+        return view || 'attendance';
+    },
+
+    urlForView: (viewId) => {
+        if (viewId === 'dashboard') return 'index.html?view=dashboard';
+
+        const filename = AppNavigation.viewToFile[viewId] || 'index.html';
+        return filename;
+    },
+
+    bindLinks: () => {
+        document.querySelectorAll('a[data-view]').forEach((link) => {
+            if (link.dataset.spaBound === 'true') return;
+            link.dataset.spaBound = 'true';
+            link.addEventListener('click', (event) => {
+                const viewId = link.getAttribute('data-view');
+                if (!AppNavigation.viewToFile[viewId] || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+
+                event.preventDefault();
+                AppNavigation.go(viewId);
+            });
+        });
+    },
+
+    go: async (viewId, data = null, options = {}) => {
+        if (!AppNavigation.viewToFile[viewId]) return switchView(viewId, data);
+
+        await switchView(viewId, data);
+        const nextUrl = AppNavigation.urlForView(viewId);
+        if (options.replace) {
+            window.history.replaceState({ viewId }, '', nextUrl);
+        } else if (window.location.pathname.split('/').pop() !== AppNavigation.viewToFile[viewId]) {
+            window.history.pushState({ viewId }, '', nextUrl);
+        }
+        AppNavigation.syncActive(viewId);
+        LayoutManager.closeSidebar();
+    },
+
+    syncActive: (viewId) => {
+        document.querySelectorAll('[data-view]').forEach((item) => {
+            item.classList.toggle('active', item.getAttribute('data-view') === viewId);
+        });
+    }
+};
+
 function initApp() {
     let staffSearchTimer = null;
 
     BrandingManager.applyBranding();
 
-    // Detect current page from filename
-    const path = window.location.pathname;
-    let page = path.substring(path.lastIndexOf('/') + 1).replace('.html', '');
-    if (!page || page === 'index') page = 'dashboard';
-
-    // Sidebar Navigation handles physical page loads
-    const navItems = document.querySelectorAll('.nav-item[data-view]');
-    navItems.forEach(item => {
-        const view = item.getAttribute('data-view');
-
-        // Update active state based on current page
-        const isMatch = view === page;
-
-        item.classList.toggle('active', isMatch);
-
-        // Nav items already have href in HTML, no need for click listeners for standard navigation
-    });
+    AppNavigation.syncActive(AppNavigation.getCurrentView());
+    AppNavigation.bindLinks();
 
     // Global Search/Profile Selector Handler
     document.addEventListener('input', (e) => {
@@ -197,18 +246,16 @@ function initApp() {
     }
 
     LayoutManager.ensureMobileChrome();
+    AppNavigation.bindLinks();
+
+    window.addEventListener('popstate', () => {
+        AppNavigation.go(AppNavigation.getCurrentView(), null, { replace: true });
+    });
+
     window.addEventListener('resize', () => {
         if (window.innerWidth > 900) {
             LayoutManager.closeSidebar();
         }
-    });
-
-    document.querySelectorAll('.sidebar .nav-item').forEach((item) => {
-        item.addEventListener('click', () => {
-            if (window.innerWidth <= 900) {
-                LayoutManager.closeSidebar();
-            }
-        });
     });
 
     // Check Auth Status
@@ -222,6 +269,7 @@ async function switchView(viewId, data = null) {
 
     window.currentView = viewId;
     HeaderManager.sync(viewId, data);
+    AppNavigation.syncActive(viewId);
 
     // Check Permissions for Employee accounts
     const currentUser = AuthManager.getStoredUser();
@@ -621,24 +669,122 @@ window.setupCustomDropdown = (selectId) => {
     container._refreshCustomDropdown?.();
 };
 
-// Custom Alert / Toast (Fallback if not defined elsewhere)
-// Global Alert System
-window.showAlert = function (message) {
+// Global popup alert system
+window.showAlert = function (message, options = {}) {
     console.log('Alert:', message);
-    const toastContainer = document.getElementById('toast-container');
-    if (toastContainer) {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i class="fas fa-check-circle"></i> <span>${message}</span>`;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
-    } else {
-        alert(message);
+
+    const text = String(message || '');
+    const inferredType = /fail|failed|error|invalid|cannot|unable/i.test(text) ? 'error' : 'success';
+    const type = options.type || inferredType;
+    const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+    };
+    const title = options.title || titles[type] || 'Success';
+    const iconClass = icons[type] || icons.success;
+    const autoCloseMs = Number(options.autoCloseMs || 2400);
+
+    const existing = document.querySelector('.app-alert-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'app-alert-overlay';
+    overlay.setAttribute('role', 'presentation');
+
+    const popup = document.createElement('div');
+    popup.className = `app-alert-popup app-alert-${type}`;
+    popup.setAttribute('role', 'alertdialog');
+    popup.setAttribute('aria-modal', 'true');
+    popup.setAttribute('aria-labelledby', 'app-alert-title');
+    popup.setAttribute('aria-describedby', 'app-alert-message');
+
+    const icon = document.createElement('div');
+    icon.className = 'app-alert-icon';
+    icon.innerHTML = `<i class="fas ${iconClass}" aria-hidden="true"></i>`;
+
+    const titleEl = document.createElement('h3');
+    titleEl.id = 'app-alert-title';
+    titleEl.textContent = title;
+
+    const highlightEl = document.createElement('div');
+    highlightEl.className = 'app-alert-highlight';
+    highlightEl.textContent = String(options.highlight || '');
+
+    const messageEl = document.createElement('p');
+    messageEl.id = 'app-alert-message';
+    messageEl.textContent = text;
+
+    const statsEl = document.createElement('div');
+    statsEl.className = 'app-alert-stats';
+    const stats = Array.isArray(options.stats) ? options.stats : [];
+    const statIcons = {
+        success: 'fa-check',
+        error: 'fa-xmark',
+        warning: 'fa-adjust',
+        info: 'fa-mug-hot'
+    };
+    stats.forEach((stat) => {
+        const chip = document.createElement('span');
+        chip.className = `app-alert-stat app-alert-stat-${stat.type || 'info'}`;
+        const iconClass = stat.icon || statIcons[stat.type] || statIcons.info;
+        chip.innerHTML = `<i class="fas ${iconClass}" aria-label="${stat.label || ''}"></i><b>${stat.value}</b>`;
+        statsEl.appendChild(chip);
+    });
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'app-alert-button';
+    button.textContent = options.buttonText || 'OK';
+
+    const close = () => {
+        overlay.classList.add('is-closing');
+        setTimeout(() => overlay.remove(), 160);
+    };
+
+    button.addEventListener('click', close);
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) close();
+    });
+
+    popup.append(icon, titleEl);
+    if (options.highlight) {
+        popup.appendChild(highlightEl);
+    }
+    popup.appendChild(messageEl);
+    if (stats.length > 0) {
+        popup.appendChild(statsEl);
+    }
+    popup.appendChild(button);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    button.focus({ preventScroll: true });
+
+    if (autoCloseMs > 0) {
+        setTimeout(close, autoCloseMs);
     }
 };
 
 // Also make it available without window prefix
 window.showAlert = window.showAlert;
+
+window.loadHtml2Pdf = () => {
+    if (window.html2pdf) return Promise.resolve(window.html2pdf);
+    if (window._html2pdfPromise) return window._html2pdfPromise;
+
+    window._html2pdfPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.async = true;
+        script.onload = () => resolve(window.html2pdf);
+        script.onerror = () => reject(new Error('PDF library load failed'));
+        document.head.appendChild(script);
+    });
+
+    return window._html2pdfPromise;
+};
 
 window.SyncStatus = {
     _hideTimer: null,

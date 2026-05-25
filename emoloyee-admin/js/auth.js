@@ -57,10 +57,8 @@ const AuthManager = {
 
     resolveCurrentUser: async () => {
         const storedUser = AuthManager.getStoredUser();
-        if (storedUser?.id) return storedUser;
-
         const username = AuthManager.getFallbackUsername();
-        if (!username) return null;
+        if (!username) return storedUser || null;
 
         try {
             const resolvedUser = await ApiClient.getProfile({ username });
@@ -172,12 +170,10 @@ const AuthManager = {
             loginContainer.classList.add('hidden');
             appContainer.classList.remove('hidden');
             try {
-                AuthManager.updateSidebarUser();
+                const storedUser = AuthManager.getStoredUser();
+                AuthManager.updateSidebarUser(storedUser ? { ...storedUser, profile_image: null } : null);
 
-                // Get page name first
-                const path = window.location.pathname;
-                let page = path.substring(path.lastIndexOf('/') + 1).replace('.html', '');
-                if (!page || page === 'index') page = 'dashboard';
+                const page = window.AppNavigation?.getCurrentView?.() || 'attendance';
 
                 // Show UI immediately
                 switchView(page);

@@ -4,6 +4,26 @@
     currentStaffList: [],
     currentAofRows: [],
 
+    initDatePicker: (selector, options = {}) => {
+        if (typeof flatpickr !== 'function') return null;
+
+        const userOnReady = options.onReady;
+        const config = {
+            dateFormat: 'Y-m-d',
+            monthSelectorType: 'static',
+            disableMobile: true,
+            ...options,
+            onReady: (selectedDates, dateStr, instance) => {
+                instance.calendarContainer.classList.add('attendance-calendar', 'app-date-calendar');
+                if (typeof userOnReady === 'function') {
+                    userOnReady(selectedDates, dateStr, instance);
+                }
+            }
+        };
+
+        return flatpickr(selector, config);
+    },
+
     formatSalaryAmountWithHold: (amount, holdSource = null) => {
         if (window.HoldSalaryUI?.amount) {
             return window.HoldSalaryUI.amount(amount, holdSource);
@@ -344,8 +364,8 @@
                         <i class="fas fa-plus"></i> Add Staff
                     </button>
                 </div>
-                <div class="table-responsive">
-                    <table>
+                <div class="table-responsive staff-list-wrap">
+                    <table class="staff-list-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -372,8 +392,8 @@
                     const joinDateDisplay = StaffManager.formatDateDisplay(s.joinDate);
 
                     return `
-                                <tr class="attendance-row">
-                                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:600; color:var(--primary);">
+                                <tr class="attendance-row staff-card-row">
+                                    <td class="staff-card-primary" data-label="Name" onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:600; color:var(--primary);">
                                         <div style="display:flex; align-items:center; gap:10px;" class="staff-link">
                                             <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), 'random', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
                                             <div style="display:flex; flex-direction:column; gap:3px;">
@@ -386,17 +406,17 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="font-weight:600; color:var(--text-muted);"><i class="fas fa-phone-alt" style="font-size:0.75rem; margin-right:5px; opacity:0.5;"></i>${s.mobile || '---'}</td>
-                                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; color:var(--text-muted);">${s.role || '---'}</td>
-                                    <td>${s.salaryType}</td>
-                                    <td>${StaffManager.formatSalaryAmountWithHold(s.salaryAmount, s)}</td>
-                                    <td>
+                                    <td data-label="Mobile" style="font-weight:600; color:var(--text-muted);"><i class="fas fa-phone-alt" style="font-size:0.75rem; margin-right:5px; opacity:0.5;"></i>${s.mobile || '---'}</td>
+                                    <td data-label="Role" onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; color:var(--text-muted);">${s.role || '---'}</td>
+                                    <td data-label="Salary Type">${s.salaryType}</td>
+                                    <td data-label="Amount">${StaffManager.formatSalaryAmountWithHold(s.salaryAmount, s)}</td>
+                                    <td data-label="Status">
                                         <span class="status-badge ${s.status === 'active' ? 'status-active' : 'status-inactive'}">
                                             ${s.status.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td onclick="event.stopPropagation()">
-                                        <div style="display:flex; align-items:center; gap:12px;">
+                                    <td class="staff-card-actions" data-label="Actions" onclick="event.stopPropagation()">
+                                        <div class="staff-action-row" style="display:flex; align-items:center; gap:12px;">
                                             <label class="switch-toggle" title="Toggle Status">
                                                 <input type="checkbox" ${s.status === 'active' ? 'checked' : ''} onchange="StaffManager.toggleStaffStatus('${s.id}')">
                                                 <span class="slider-round"></span>
@@ -697,11 +717,11 @@
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 350px 1fr; gap:2rem;">
+            <div class="profile-detail-layout" style="display:grid; grid-template-columns: 350px 1fr; gap:2rem;">
                 <!-- Left Sidebar -->
-                <div style="display:flex; flex-direction:column; gap:2rem;">
+                <div class="profile-side-column" style="display:flex; flex-direction:column; gap:2rem;">
                     <!-- Personal Details -->
-                    <div class="card">
+                    <div class="card profile-personal-card">
                         <div class="card-header"><h3>Personal Details</h3></div>
                         <div style="padding-top:10px;">
                             <div style="margin-bottom:1.5rem;">
@@ -738,7 +758,7 @@
                     </div>
 
                     <!-- Attendance Summary Stats -->
-                    <div class="card">
+                    <div class="card profile-summary-card">
                         <div class="card-header"><h3>Attendance Summary</h3></div>
                         ${(() => {
                 const monthAtt = staffAttendance.filter(a => {
@@ -776,9 +796,9 @@
                 </div>
 
                 <!-- Right Side -->
-                <div style="display:flex; flex-direction:column; gap:2rem;">
+                <div class="profile-main-column" style="display:flex; flex-direction:column; gap:2rem;">
                     <!-- Stats Grid -->
-                    <div class="card">
+                    <div class="card profile-payment-card">
                         <div class="card-header"><h3>Payment Detail</h3></div>
                         <p style="margin:0 0 1rem; color:var(--text-muted); font-size:0.8rem; font-weight:600;">
                             Showing salary month: ${new Date(paymentYear, paymentMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -812,7 +832,7 @@
                     </div>
 
                     <!-- Advance Payment Section -->
-                    <div class="card">
+                    <div class="card profile-advance-card">
                         <div class="card-header" style="border-bottom:none; margin-bottom:0;">
                             <h3>Advance Payment</h3>
                             <button class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.75rem; background:#6c5ce7;" onclick="StaffManager.showAdvanceModal('${staff.id}')">
@@ -876,11 +896,11 @@
                             const meta = StaffManager.getLoanHistoryMeta(entry.type);
                             return `
                                                 <tr>
-                                                    <td>${entry.date ? new Date(`${entry.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</td>
-                                                    <td><span class="badge ${meta.badgeClass}" style="font-size:0.65rem; padding:4px 9px;">${meta.label}</span></td>
-                                                    <td style="font-weight:800; color:${isCredit ? 'var(--success)' : 'var(--danger)'};">${isCredit ? '+' : '-'}&#8377;${Number(entry.amount || 0).toLocaleString()}</td>
-                                                    <td style="font-size:0.8rem; color:var(--text-muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeAttr(entry.remark)}">${entry.remark || '-'}</td>
-                                                    <td>
+                                                    <td data-label="Date"><span class="ledger-cell-value">${entry.date ? new Date(`${entry.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</span></td>
+                                                    <td data-label="Type"><span class="ledger-cell-value"><span class="badge ${meta.badgeClass}" style="font-size:0.65rem; padding:4px 9px;">${meta.label}</span></span></td>
+                                                    <td data-label="Amount" style="font-weight:800; color:${isCredit ? 'var(--success)' : 'var(--danger)'};"><span class="ledger-cell-value">${isCredit ? '+' : '-'}&#8377;${Number(entry.amount || 0).toLocaleString()}</span></td>
+                                                    <td data-label="Remark" style="font-size:0.8rem; color:var(--text-muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeAttr(entry.remark)}"><span class="ledger-cell-value">${entry.remark || '-'}</span></td>
+                                                    <td data-label="Action">
                                                         <div style="display:flex; gap:3px;">
                                                             <button class="btn-icon" style="width:28px; height:28px;" onclick="StaffManager.showEditAdvanceModal('${staff.id}', ${entry.id})"><i class="fas fa-edit" style="font-size:0.7rem;"></i></button>
                                                             <button class="btn-icon text-danger" style="width:28px; height:28px;" onclick="StaffManager.deleteAdvance('${staff.id}', ${entry.id})"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
@@ -897,10 +917,10 @@
                     </div>
 
                     <!-- Financial Logs Section (Payment Deduction & Overtime) -->
-                    <div class="card">
+                    <div class="card profile-finance-card">
                         <div class="card-header" style="border-bottom:none; margin-bottom:0;">
                             <h3>Financial Logs</h3>
-                            <div style="display:flex; gap:10px;">
+                            <div class="profile-finance-actions" style="display:flex; gap:10px;">
                                 <button class="btn-primary" style="padding:0.4rem 0.8rem; font-size:0.75rem; background:var(--danger);" onclick="StaffManager.showDeductionModal('${staff.id}')">
                                     <i class="fas fa-plus"></i> Add Payment Deduction
                                 </button>
@@ -937,10 +957,10 @@
                 return staffFines.length === 0 ? '<tr><td colspan="4" style="text-align:center">No records</td></tr>' :
                     staffFines.sort((a, b) => b.id - a.id).map(f => `
                                                         <tr>
-                                                            <td>${f.date ? new Date(`${f.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}</td>
-                                                            <td style="font-weight:700; color:var(--danger);">&#8377;${f.amount}</td>
-                                                            <td style="font-size:0.8rem; color:var(--text-muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.remark || ''}">${f.remark || '-'}</td>
-                                                            <td>
+                                                            <td data-label="Date"><span class="ledger-cell-value">${f.date ? new Date(`${f.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}</span></td>
+                                                            <td data-label="Amount" style="font-weight:700; color:var(--danger);"><span class="ledger-cell-value">&#8377;${f.amount}</span></td>
+                                                            <td data-label="Remark" style="font-size:0.8rem; color:var(--text-muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.remark || ''}"><span class="ledger-cell-value">${f.remark || '-'}</span></td>
+                                                            <td data-label="Action">
                                                                 <div style="display:flex; gap:3px;">
                                                                     <button class="btn-icon" style="width:28px; height:28px;" onclick="StaffManager.showEditFineModal('${staff.id}', ${f.id})"><i class="fas fa-edit" style="font-size:0.7rem;"></i></button>
                                                                     <button class="btn-icon text-danger" style="width:28px; height:28px;" onclick="StaffManager.deleteFine('${staff.id}', ${f.id})"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
@@ -979,9 +999,9 @@
                 return staffOT.length === 0 ? '<tr><td colspan="3" style="text-align:center">No records</td></tr>' :
                     staffOT.sort((a, b) => b.id - a.id).map(ot => `
                                                         <tr>
-                                                            <td>${ot.date ? new Date(`${ot.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}</td>
-                                                            <td style="font-weight:700; color:var(--success);">&#8377;${ot.amount}</td>
-                                                            <td>
+                                                            <td data-label="Date"><span class="ledger-cell-value">${ot.date ? new Date(`${ot.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}</span></td>
+                                                            <td data-label="Amount" style="font-weight:700; color:var(--success);"><span class="ledger-cell-value">&#8377;${ot.amount}</span></td>
+                                                            <td data-label="Action">
                                                                 <div style="display:flex; gap:3px;">
                                                                     <button class="btn-icon" style="width:28px; height:28px;" onclick="StaffManager.showEditOvertimeModal('${staff.id}', ${ot.id})"><i class="fas fa-edit" style="font-size:0.7rem;"></i></button>
                                                                     <button class="btn-icon text-danger" style="width:28px; height:28px;" onclick="StaffManager.deleteOvertime('${staff.id}', ${ot.id})"><i class="fas fa-trash" style="font-size:0.7rem;"></i></button>
@@ -998,7 +1018,7 @@
                     </div>
 
                     <!-- Attendance Section -->
-                    <div class="card" style="padding: 1.5rem;">
+                    <div class="card profile-calendar-card" style="padding: 1.5rem;">
                         <div class="card-header" style="margin-bottom: 2rem;">
                             <div style="display:flex; align-items:center; gap:1rem;">
                                 <div style="background:var(--primary); color:white; width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;">
@@ -1242,7 +1262,7 @@
         setTimeout(() => {
             setupCustomDropdown('staff-status');
             setupCustomDropdown('staff-salary-type');
-            flatpickr("#staff-join-date", {
+            StaffManager.initDatePicker("#staff-join-date", {
                 defaultDate: "today",
                 dateFormat: "Y-m-d"
             });
@@ -1577,7 +1597,7 @@
         // Initialize custom UI elements
         setTimeout(() => {
             setupCustomDropdown('adv-type');
-            flatpickr("#adv-date", {
+            StaffManager.initDatePicker("#adv-date", {
                 defaultDate: "today",
                 dateFormat: "Y-m-d"
             });
@@ -1738,7 +1758,7 @@
 
         setTimeout(() => {
             setupCustomDropdown('saving-type');
-            flatpickr('#saving-date', {
+            StaffManager.initDatePicker('#saving-date', {
                 defaultDate: 'today',
                 dateFormat: 'Y-m-d'
             });
@@ -1888,7 +1908,7 @@
 
         setTimeout(() => {
             setupCustomDropdown('transfer-direction');
-            flatpickr('#transfer-date', {
+            StaffManager.initDatePicker('#transfer-date', {
                 defaultDate: 'today',
                 dateFormat: 'Y-m-d'
             });
@@ -2016,36 +2036,36 @@
         const isHeld = Number(localPendingHold.days || 0) > 0;
 
         const content = `
-            <div style="padding:10px;">
-                <p style="text-align:center; color:var(--text-muted); margin-bottom:1.5rem;">Quick adjustment for <strong>${staff.name}</strong></p>
+            <div class="quick-salary-modal" style="padding:10px;">
+                <p class="quick-salary-subtitle" style="text-align:center; color:var(--text-muted); margin-bottom:1.5rem;">Quick adjustment for <strong>${staff.name}</strong></p>
                 
-                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:2rem;">
-                    <button class="btn-outline" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(108, 92, 231, 0.25); color:#6c5ce7; background:rgba(108, 92, 231, 0.07); transition:all 0.3s ease; border-radius:20px;" 
+                <div class="quick-salary-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:2rem;">
+                    <button class="btn-outline quick-salary-card" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(108, 92, 231, 0.25); color:#6c5ce7; background:rgba(108, 92, 231, 0.07); transition:all 0.3s ease; border-radius:20px;" 
                         onclick="StaffManager.showAdvanceModal('${staffId}')">
                         <i class="fas fa-wallet" style="font-size:1.8rem; margin-bottom:5px;"></i>
                         <span style="font-size:0.85rem; font-weight:700;">Advance Payment</span>
                     </button>
 
-                    <button class="btn-outline" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(214, 48, 49, 0.2); color:var(--danger); background:rgba(214, 48, 49, 0.08); transition:all 0.3s ease; border-radius:20px;" 
+                    <button class="btn-outline quick-salary-card" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(214, 48, 49, 0.2); color:var(--danger); background:rgba(214, 48, 49, 0.08); transition:all 0.3s ease; border-radius:20px;" 
                         onclick="StaffManager.showDeductionModal('${staffId}')">
                         <i class="fas fa-minus-circle" style="font-size:1.8rem; margin-bottom:5px;"></i>
                         <span style="font-size:0.85rem; font-weight:700;">Payment Deduction</span>
                     </button>
                     
-                    <button class="btn-outline" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(0, 184, 148, 0.2); color:var(--success); background:rgba(0, 184, 148, 0.05); transition:all 0.3s ease; border-radius:20px;" 
+                    <button class="btn-outline quick-salary-card" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:rgba(0, 184, 148, 0.2); color:var(--success); background:rgba(0, 184, 148, 0.05); transition:all 0.3s ease; border-radius:20px;" 
                         onclick="StaffManager.showOvertimeModal('${staffId}')">
                         <i class="fas fa-clock" style="font-size:1.8rem; margin-bottom:5px;"></i>
                         <span style="font-size:0.85rem; font-weight:700;">Overtime</span>
                     </button>
 
-                    <button class="btn-outline" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:${isHeld ? 'var(--danger)' : 'rgba(99, 110, 114, 0.2)'}; color:${isHeld ? 'var(--danger)' : 'var(--text-muted)'}; background:${isHeld ? 'rgba(214, 48, 49, 0.05)' : 'rgba(99, 110, 114, 0.05)'}; transition:all 0.3s ease; border-radius:20px;" 
+                    <button class="btn-outline quick-salary-card" style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.5rem 0.5rem; border-color:${isHeld ? 'var(--danger)' : 'rgba(99, 110, 114, 0.2)'}; color:${isHeld ? 'var(--danger)' : 'var(--text-muted)'}; background:${isHeld ? 'rgba(214, 48, 49, 0.05)' : 'rgba(99, 110, 114, 0.05)'}; transition:all 0.3s ease; border-radius:20px;" 
                         onclick="StaffManager.showHoldToggleModal('${staffId}', '${monthKey}')">
                         <i class="fas ${isHeld ? 'fa-lock' : 'fa-play-circle'}" style="font-size:1.8rem; margin-bottom:5px;"></i>
                         <span style="font-size:0.85rem; font-weight:700;">${isHeld ? 'Held (Manage)' : 'Hold Salary'}</span>
                     </button>
                 </div>
 
-                <div style="background:var(--bg-main); padding:1rem; border-radius:12px; border:1px solid var(--border); display:flex; gap:12px; align-items:start;">
+                <div class="quick-salary-note" style="background:var(--bg-main); padding:1rem; border-radius:12px; border:1px solid var(--border); display:flex; gap:12px; align-items:start;">
                     <i class="fas fa-info-circle" style="color:var(--info); margin-top:3px;"></i>
                     <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.4; margin:0;">
                         <strong>Advance Payment</strong> debit/credit real backend ledger me save hota hai. <strong>Amount Deduction</strong> selected date wale month's salary me apply hota hai.
@@ -2258,7 +2278,7 @@
         ModalManager.show('Add Payment Deduction', content);
 
         setTimeout(() => {
-            flatpickr("#deduction-date", {
+            StaffManager.initDatePicker("#deduction-date", {
                 defaultDate: "today",
                 dateFormat: "Y-m-d"
             });
@@ -2349,7 +2369,7 @@
         ModalManager.show('Add Payment Deduction', content);
 
         setTimeout(() => {
-            flatpickr("#fine-date", {
+            StaffManager.initDatePicker("#fine-date", {
                 defaultDate: "today",
                 dateFormat: "Y-m-d"
             });
@@ -2479,7 +2499,7 @@
         ModalManager.show('Add Overtime', content);
 
         setTimeout(() => {
-            flatpickr("#ot-date", {
+            StaffManager.initDatePicker("#ot-date", {
                 defaultDate: "today",
                 dateFormat: "Y-m-d"
             });

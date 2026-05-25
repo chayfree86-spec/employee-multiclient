@@ -6,6 +6,7 @@ const AttendanceManager = {
     currentStaff: [],
     currentAttendanceData: {},
     currentAofRows: [],
+    _lastChangedAttendance: null,
 
     normalizeStatus: (status) => {
         if (!status) return '';
@@ -173,7 +174,7 @@ const AttendanceManager = {
                         <div class="input-wrapper" style="min-width: 250px;">
                             <i class="fas fa-calendar-day" style="left: 1rem; color: var(--primary);"></i>
                             <input type="text" id="attendance-date" class="date-input" value="${AttendanceManager.currentDate}" 
-                                style="width: 100%; padding: 0.8rem 1rem 0.8rem 3rem; border: 1px solid var(--border); border-radius: 12px; font-weight: 700; font-family: 'Outfit', sans-serif; cursor: pointer; background: var(--bg-main);">
+                                style="width: 100%; padding: 0.8rem 1rem 0.8rem 3rem; border: 1px solid var(--border); border-radius: 12px; font-weight: 700; font-family: var(--app-font); cursor: pointer; background: var(--bg-main);">
                         </div>
                         <button type="button" class="date-nav-btn" aria-label="Next date" onclick="AttendanceManager.changeDateByDays(1)">
                             <i class="fas fa-chevron-right"></i>
@@ -195,7 +196,7 @@ const AttendanceManager = {
                         </button>
                     </div>
                 </div>
-                <div class="attendance-stats-header" id="attendance-stats-row" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.5rem; margin: 1.5rem 0;">
+                <div class="attendance-stats-header" id="attendance-stats-row">
                     <!-- Stats will be injected here -->
                 </div>
 
@@ -225,6 +226,7 @@ const AttendanceManager = {
             altInput: true,
             altFormat: "d M, D",
             monthSelectorType: "static",
+            disableMobile: true,
             onDayCreate: (dObj, dStr, instance, dayElem) => {
                 AttendanceManager.decorateCalendarDay(dayElem, dayElem.dateObj, instance);
             },
@@ -241,7 +243,7 @@ const AttendanceManager = {
                 instance.redraw();
             },
             onReady: (selectedDates, dateStr, instance) => {
-                instance.calendarContainer.classList.add('attendance-calendar');
+                instance.calendarContainer.classList.add('attendance-calendar', 'app-date-calendar');
                 AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
                 AttendanceManager.updateDateSelectionState(selectedDates[0]);
             }
@@ -428,6 +430,10 @@ const AttendanceManager = {
         const group = document.getElementsByName(input.name);
         group.forEach(r => r.dataset.checked = (r === input).toString());
 
+        AttendanceManager._lastChangedAttendance = {
+            staffId: String(input.name || '').replace(/^att-/, ''),
+            status: input.value
+        };
         AttendanceManager.persistDraftFromDom();
     },
 
@@ -435,6 +441,10 @@ const AttendanceManager = {
         const isCurrentlyChecked = radio.dataset.checked === 'true';
 
         if (isCurrentlyChecked) {
+            AttendanceManager._lastChangedAttendance = {
+                staffId: String(radio.name || '').replace(/^att-/, ''),
+                status: ''
+            };
             radio.checked = false;
             radio.dataset.checked = 'false';
             radio.parentElement.classList.remove('active');
@@ -460,6 +470,11 @@ const AttendanceManager = {
         const activeStaff = staff.filter((s) => s.status === 'active');
 
         if (activeStaff.length === 0) return;
+        AttendanceManager._lastChangedAttendance = {
+            staffId: '',
+            status: status,
+            bulkCount: activeStaff.length
+        };
 
         let accentColor = 'var(--success)';
         let statusText = 'Present';
@@ -490,13 +505,13 @@ const AttendanceManager = {
                         </svg>
 
                         <div style="text-align:center; z-index:2;">
-                            <div id="sync-counter" style="font-size:5rem; font-weight:900; color:var(--primary); line-height:1; font-family:'Outfit', sans-serif;">0</div>
+                            <div id="sync-counter" style="font-size:5rem; font-weight:900; color:var(--primary); line-height:1; font-family:var(--app-font);">0</div>
                             <div style="font-size:0.85rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:3px; margin-top:5px;">Process</div>
                         </div>
                     </div>
 
                     <div style="height:80px; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:center; perspective: 1000px;">
-                        <div id="syncing-name" style="font-size:2.2rem; font-weight:800; color:var(--primary); font-family:'Outfit'; opacity:0; transform:translateY(20px) rotateX(-20deg); transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">Initializing...</div>
+                        <div id="syncing-name" style="font-size:2.2rem; font-weight:800; color:var(--primary); font-family:var(--app-font); opacity:0; transform:translateY(20px) rotateX(-20deg); transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">Initializing...</div>
                     </div>
 
                     <div style="display:inline-flex; align-items:center; gap:15px; background:var(--bg-main); padding:1.25rem 3.5rem; border-radius:100px; border:1px solid var(--border); box-shadow:0 15px 45px rgba(0,0,0,0.08);">
@@ -639,8 +654,52 @@ const AttendanceManager = {
 
         if (snapshot.date === AttendanceManager.currentDate) {
             AttendanceManager.currentAttendanceData = { ...snapshot.dayData };
+            const savedCounts = { present: 0, absent: 0, halfday: 0, holiday: 0 };
+            Object.values(snapshot.dayData || {}).forEach((status) => {
+                const normalized = AttendanceManager.normalizeStatus(status);
+                if (normalized && Object.prototype.hasOwnProperty.call(savedCounts, normalized)) {
+                    savedCounts[normalized]++;
+                }
+            });
+            const statusLabels = {
+                present: 'P',
+                absent: 'A',
+                halfday: 'H',
+                holiday: 'Off'
+            };
+            const popupTypes = {
+                present: 'success',
+                absent: 'error',
+                halfday: 'warning',
+                holiday: 'info'
+            };
+            const popupTitles = {
+                present: 'Present Saved',
+                absent: 'Absent Saved',
+                halfday: 'Half Day Saved',
+                holiday: 'Off Saved'
+            };
+            const changed = AttendanceManager._lastChangedAttendance || {};
+            const changedStatus = AttendanceManager.normalizeStatus(changed.status || '');
+            const changedStaff = (AttendanceManager.currentStaff || []).find((s) => String(s.id) === String(changed.staffId));
+            const savedMessage = changedStaff
+                ? `${statusLabels[changedStatus] || 'Not Marked'} saved for ${snapshot.date}`
+                : changed.bulkCount
+                    ? `${changed.bulkCount} staff marked ${statusLabels[changedStatus] || ''} for ${snapshot.date}`
+                    : `Attendance saved for ${snapshot.date}`;
             window.SyncStatus?.show(`Attendance saved for ${snapshot.date}`, 'success', 1600);
-            window.showAlert(`Attendance saved for ${snapshot.date}`);
+            window.showAlert(savedMessage, {
+                title: popupTitles[changedStatus] || 'Attendance Saved',
+                type: popupTypes[changedStatus] || 'success',
+                highlight: changedStaff ? changedStaff.name : '',
+                autoCloseMs: 3600,
+                stats: [
+                    { label: 'P', value: savedCounts.present, type: 'success' },
+                    { label: 'A', value: savedCounts.absent, type: 'error' },
+                    { label: 'H', value: savedCounts.halfday, type: 'warning' },
+                    { label: 'Off', value: savedCounts.holiday, type: 'info' }
+                ]
+            });
         }
     },
 
@@ -664,20 +723,17 @@ const AttendanceManager = {
         });
 
         statsRow.innerHTML = `
-            <div style="background:var(--bg-card); padding:1.25rem; border-radius:16px; border:1px solid var(--border); text-align:center; box-shadow:0 10px 20px rgba(0,0,0,0.05); position:relative; overflow:hidden;">
-                <i class="fas fa-check-circle" style="position:absolute; right:12px; top:12px; font-size:1.1rem; color:var(--success);"></i>
-                <label style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Present</label>
-                <h4 style="font-size:1.8rem; color:var(--success); margin-top:8px; font-weight:800;">${present}</h4>
+            <div class="attendance-stat-pill stat-present" title="Present">
+                <i class="fas fa-check"></i><strong>${present}</strong>
             </div>
-            <div style="background:var(--bg-card); padding:1.25rem; border-radius:16px; border:1px solid var(--border); text-align:center; box-shadow:0 10px 20px rgba(0,0,0,0.05); position:relative; overflow:hidden;">
-                <i class="fas fa-times-circle" style="position:absolute; right:12px; top:12px; font-size:1.1rem; color:var(--danger);"></i>
-                <label style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Absent</label>
-                <h4 style="font-size:1.8rem; color:var(--danger); margin-top:8px; font-weight:800;">${absent}</h4>
+            <div class="attendance-stat-pill stat-absent" title="Absent">
+                <i class="fas fa-xmark"></i><strong>${absent}</strong>
             </div>
-            <div style="background:var(--bg-card); padding:1.25rem; border-radius:16px; border:1px solid var(--border); text-align:center; box-shadow:0 10px 20px rgba(0,0,0,0.05); position:relative; overflow:hidden;">
-                <i class="fas fa-adjust" style="position:absolute; right:12px; top:12px; font-size:1.1rem; color:#FF9F43;"></i>
-                <label style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Half Day</label>
-                <h4 style="font-size:1.8rem; color:#FF9F43; margin-top:8px; font-weight:800;">${halfday}</h4>
+            <div class="attendance-stat-pill stat-halfday" title="Half Day">
+                <i class="fas fa-adjust"></i><strong>${halfday}</strong>
+            </div>
+            <div class="attendance-stat-pill stat-off" title="Off">
+                <i class="fas fa-mug-hot"></i><strong>${holiday}</strong>
             </div>
         `;
 

@@ -34,9 +34,9 @@ const SettingsManager = {
                 <p style="color:var(--text-muted);">Configure your account and system preferences</p>
             </div>
 
-            <div class="card" style="padding:0; border-radius:var(--radius-lg); overflow:hidden;">
+            <div class="card settings-shell" style="padding:0; border-radius:var(--radius-lg); overflow:hidden;">
                 <!-- Tabs Header -->
-                <div style="display:flex; background:var(--bg-main); padding:8px; gap:8px; border-bottom:1px solid var(--border);">
+                <div class="settings-tabs" style="display:flex; background:var(--bg-main); padding:8px; gap:8px; border-bottom:1px solid var(--border);">
                     <button class="settings-tab-btn ${SettingsManager._activeTab === 'admin' ? 'active' : ''}" onclick="SettingsManager.switchTab('admin')">
                         <i class="fas fa-user-shield"></i> Admin Setting
                     </button>
@@ -49,7 +49,7 @@ const SettingsManager = {
                 </div>
 
                 <!-- Tab Content Container -->
-                <div id="settings-tab-content" style="padding:2rem; min-height:400px; transition: var(--transition);">
+                <div id="settings-tab-content" class="settings-tab-content" style="padding:2rem; min-height:400px; transition: var(--transition);">
                     ${await SettingsManager.getTabContent(SettingsManager._activeTab, user)}
                 </div>
             </div>
@@ -111,14 +111,14 @@ const SettingsManager = {
         switch (tabId) {
             case 'admin':
                 return `
-                    <div style="display:grid; grid-template-columns: 280px 1fr; gap:3rem; animation: fadeIn 0.3s ease;">
-                        <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div class="settings-admin-layout" style="display:grid; grid-template-columns: 280px 1fr; gap:3rem; animation: fadeIn 0.3s ease;">
+                        <div class="settings-admin-side" style="display:flex; flex-direction:column; gap:12px;">
                             <button class="nav-item active" style="border:none; width:100%; border-radius:12px;" onclick="SettingsManager.switchTab('admin')">
                                 <i class="fas fa-id-card"></i> Profile & Security
                             </button>
                             
-                            <div style="margin-top:2rem; padding:1.5rem; text-align:center; background:var(--bg-main); border-radius:16px;">
-                                <div style="position:relative; width:90px; height:90px; margin:0 auto 1rem; border-radius:12px; border:2px dashed var(--border); background:white; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="SettingsManager.showCompanyLogoModal()">
+                            <div class="settings-logo-card" style="margin-top:2rem; padding:1.5rem; text-align:center; background:var(--bg-main); border-radius:16px;">
+                                <div class="settings-logo-box" style="position:relative; width:90px; height:90px; margin:0 auto 1rem; border-radius:12px; border:2px dashed var(--border); background:white; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="SettingsManager.showCompanyLogoModal()">
                                     <img id="settings-company-logo" src="assets/logo.png" alt="Company logo" onerror="this.src='https://placehold.co/200x200?text=LOGO'" style="max-width:80%; max-height:80%; object-fit:contain;">
                                     <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); border-radius:10px; color:white; display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
                                         <i class="fas fa-camera"></i>
@@ -128,9 +128,9 @@ const SettingsManager = {
                             </div>
                         </div>
 
-                        <div style="display:flex; flex-direction:column; gap:2rem;">
+                        <div class="settings-admin-main" style="display:flex; flex-direction:column; gap:2rem;">
                                 <!-- Identity -->
-                                <div style="display:flex; align-items:center; gap:1.5rem; background:var(--bg-main); padding:1.5rem; border-radius:16px;">
+                                <div class="settings-identity-card" style="display:flex; align-items:center; gap:1.5rem; background:var(--bg-main); padding:1.5rem; border-radius:16px;">
                                     <div style="position:relative; width:80px; height:80px; border-radius:24px; border:3px solid white; overflow:hidden; cursor:pointer;" onclick="AuthManager.showProfileImageModal()">
                                         <img src="${avatarSrc}" alt="${displayName} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodedName}', 'C8A97E', 'fff', 80)" style="width:100%; height:100%; object-fit:cover;">
                                     </div>
@@ -142,16 +142,16 @@ const SettingsManager = {
 
                                 <!-- Security Controls -->
                                 <div>
-                                    <h4 style="margin-bottom:1rem; font-family:'Outfit';">Branding</h4>
-                                    <div style="background:var(--bg-card); border:1px solid var(--border); padding:1.25rem; border-radius:16px;">
-                                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1rem;">
+                                    <h4 style="margin-bottom:1rem; font-family:var(--app-font);">Branding</h4>
+                                    <div class="settings-branding-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.25rem; border-radius:16px;">
+                                        <div class="settings-card-head" style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1rem;">
                                             <div>
                                                 <p style="font-weight:700; color:var(--text-main); margin-bottom:6px;">Business Details</p>
                                                 <p style="font-size:0.85rem; color:var(--text-muted);">Salary slip header, sidebar, login page, and browser title mein ye details show hongi.</p>
                                             </div>
                                             <button class="btn-primary" onclick="SettingsManager.saveBusinessBranding()">Save</button>
                                         </div>
-                                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                                        <div class="settings-branding-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                                             <div class="input-group" style="margin-bottom:0;">
                                                 <label>Cafe Name</label>
                                                 <input type="text" id="settings-cafe-name" value="${cafeName}" maxlength="40" placeholder="Enter cafe name" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--bg-main); font-weight:600;">
@@ -173,7 +173,7 @@ const SettingsManager = {
                                 </div>
 
                                 <div>
-                                    <h4 style="margin-bottom:1rem; font-family:'Outfit';">Security & Password</h4>
+                                    <h4 style="margin-bottom:1rem; font-family:var(--app-font);">Security & Password</h4>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); border:1px solid var(--border); padding:1.25rem; border-radius:16px;">
                                         <div>
                                             <p style="font-weight:700; color:var(--text-main);">Change Admin Password</p>
@@ -184,7 +184,7 @@ const SettingsManager = {
                                 </div>
                                 
                                 <div>
-                                    <h4 style="margin-bottom:1rem; font-family:'Outfit';">System Controls</h4>
+                                    <h4 style="margin-bottom:1rem; font-family:var(--app-font);">System Controls</h4>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); border:1px solid var(--border); padding:1.25rem; border-radius:16px; margin-bottom:1rem;">
                                         <div>
                                             <p style="font-weight:700; color:var(--text-main);">Cloud Force Sync</p>
@@ -231,7 +231,7 @@ const SettingsManager = {
 
                 return `
                     <div style="max-width:850px; animation: fadeIn 0.3s ease;">
-                        <h4 style="margin-bottom:2rem; font-family:'Outfit'; display:flex; align-items:center; gap:10px;">
+                        <h4 style="margin-bottom:2rem; font-family:var(--app-font); display:flex; align-items:center; gap:10px;">
                             <i class="fas fa-sliders-h text-primary"></i> Default Business Rules
                         </h4>
                         
@@ -391,7 +391,7 @@ const SettingsManager = {
 
                 return `
                     <div style="animation: fadeIn 0.3s ease;">
-                        <h4 style="margin-bottom:1.5rem; font-family:'Outfit';">Visual Identity & Experience</h4>
+                        <h4 style="margin-bottom:1.5rem; font-family:var(--app-font);">Visual Identity & Experience</h4>
                         
                         <!-- Manual Color Picker -->
                         <div style="margin-bottom:2rem; padding:1.5rem; background:var(--bg-card); border-radius:16px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">

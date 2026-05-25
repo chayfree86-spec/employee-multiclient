@@ -109,8 +109,24 @@ class SuperadminController extends BaseApiController
             return $this->respondError('No valid user fields provided', 400);
         }
 
-        if (!$model->update($id, $payload)) {
-            return $this->respondError('Failed to update user', 400, $model->errors());
+        $duplicate = \Config\Database::connect()
+            ->table('users')
+            ->where('id !=', $id)
+            ->groupStart()
+            ->where('mobile', $payload['mobile'] ?? '__never__')
+            ->orWhere('email', $payload['email'] ?? '__never__')
+            ->orWhere('username', $payload['username'] ?? '__never__')
+            ->groupEnd()
+            ->get()
+            ->getRowArray();
+
+        if ($duplicate) {
+            return $this->respondError('Another user already exists with same mobile, email, or username', 409);
+        }
+
+        $payload['updated_at'] = date('Y-m-d H:i:s');
+        if (!\Config\Database::connect()->table('users')->where('id', $id)->update($payload)) {
+            return $this->respondError('Failed to update user', 400);
         }
 
         $user = $model->find($id);

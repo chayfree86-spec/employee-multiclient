@@ -3,7 +3,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.BrandingManager = {
-    getCafeName: () => StorageManager.get('cafe_name') || 'Cafe Admin',
+    getStoredUser: () => {
+        try {
+            return JSON.parse(sessionStorage.getItem('employee_management_admin_user') || 'null');
+        } catch (error) {
+            return null;
+        }
+    },
+    getCafeName: () => {
+        const user = BrandingManager.getStoredUser();
+        return StorageManager.get('cafe_name') || user?.business_name || user?.name || user?.username || 'Cafe Admin';
+    },
+    getBusinessLogo: () => {
+        const user = BrandingManager.getStoredUser();
+        const storedLogo = StorageManager.get('business_logo') || '';
+        const fallbackLogo = /^(data:|blob:)/i.test(String(storedLogo)) ? storedLogo : '';
+        return window.PhotoHelper?.normalizeImageUrl?.(user?.profile_image || fallbackLogo) || '';
+    },
     getBusinessAddress: () => StorageManager.get('business_address') || 'Near Clock Tower, Main Market, City',
     getBusinessPhone: () => StorageManager.get('business_phone') || '+91 98765 43210',
     getBusinessEmail: () => StorageManager.get('business_email') || 'info@cafepremium.com',
@@ -13,13 +29,32 @@ window.BrandingManager = {
 
         document.title = `${cafeName} Attendance & Salary Management`;
 
-        document.querySelectorAll('.login-header h1').forEach((el) => {
-            el.textContent = cafeName;
-        });
-
         document.querySelectorAll('.brand-info h2').forEach((el) => {
             el.textContent = cafeName;
         });
+
+        const logo = BrandingManager.getBusinessLogo();
+        if (logo) {
+            document.querySelectorAll('.sidebar-logo').forEach((el) => {
+                if (el.tagName.toLowerCase() === 'img') {
+                    el.onerror = function () {
+                        window.PhotoHelper?.applyFallback?.(this, encodeURIComponent(cafeName), '007965', 'fff', 52);
+                    };
+                    el.src = logo;
+                    el.alt = `${cafeName} logo`;
+                    return;
+                }
+
+                const img = document.createElement('img');
+                img.className = el.className;
+                img.alt = `${cafeName} logo`;
+                img.onerror = function () {
+                    window.PhotoHelper?.applyFallback?.(this, encodeURIComponent(cafeName), '007965', 'fff', 52);
+                };
+                img.src = logo;
+                el.replaceWith(img);
+            });
+        }
     }
 };
 
@@ -69,6 +104,32 @@ window.HeaderManager = {
             ? (document.getElementById('global-search')?.value || '')
             : '';
         HeaderManager.renderDefaultSearch(currentValue);
+    },
+
+    startClock: () => {
+        const dateEl = document.getElementById('current-date-label');
+        const timeEl = document.getElementById('current-time-label');
+        if (!dateEl || !timeEl) return;
+
+        const update = () => {
+            const now = new Date();
+            dateEl.textContent = now.toLocaleDateString('en-IN', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            timeEl.textContent = now.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        };
+
+        update();
+        window.clearInterval(HeaderManager._clockTimer);
+        HeaderManager._clockTimer = window.setInterval(update, 1000);
     }
 };
 
@@ -79,30 +140,78 @@ window.LayoutManager = {
 
         if (!appContainer || !header) return;
 
-        if (!document.getElementById('mobile-nav-toggle')) {
-            const toggle = document.createElement('button');
-            toggle.type = 'button';
-            toggle.id = 'mobile-nav-toggle';
-            toggle.className = 'mobile-nav-toggle';
-            toggle.setAttribute('aria-label', 'Open navigation');
-            toggle.innerHTML = '<i class="fas fa-bars"></i>';
-            toggle.addEventListener('click', () => {
-                document.body.classList.toggle('sidebar-open');
-                const isOpen = document.body.classList.contains('sidebar-open');
-                toggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
-                toggle.innerHTML = `<i class="fas fa-${isOpen ? 'times' : 'bars'}"></i>`;
-                document.getElementById('mobile-sidebar-backdrop')?.classList.toggle('active', isOpen);
-            });
-            header.prepend(toggle);
+        document.getElementById('mobile-nav-toggle')?.remove();
+
+        if (!document.getElementById('mobile-pwa-nav')) {
+            const footerNav = document.createElement('nav');
+            footerNav.id = 'mobile-pwa-nav';
+            footerNav.className = 'mobile-pwa-nav';
+            footerNav.setAttribute('aria-label', 'Mobile app navigation');
+            footerNav.innerHTML = `
+                <a href="index.html?view=dashboard" class="mobile-pwa-item" data-view="dashboard">
+                    <i class="fas fa-th-large"></i><span>Dashboard</span>
+                </a>
+                <a href="staff.html" class="mobile-pwa-item" data-view="staff">
+                    <i class="fas fa-users-cog"></i><span>Staff</span>
+                </a>
+                <a href="attendance.html" class="mobile-pwa-item" data-view="attendance">
+                    <i class="fas fa-calendar-alt"></i><span>Attendance</span>
+                </a>
+                <a href="salary.html" class="mobile-pwa-item" data-view="salary">
+                    <i class="fas fa-money-check-alt"></i><span>Salary</span>
+                </a>
+                <button type="button" class="mobile-pwa-item" id="mobile-more-btn" aria-label="More menu">
+                    <i class="fas fa-bars"></i><span>Menu</span>
+                </button>
+            `;
+            document.body.appendChild(footerNav);
         }
 
-        if (!document.getElementById('mobile-sidebar-backdrop')) {
+        if (!document.getElementById('mobile-more-backdrop')) {
             const backdrop = document.createElement('div');
-            backdrop.id = 'mobile-sidebar-backdrop';
-            backdrop.className = 'mobile-sidebar-backdrop';
-            backdrop.addEventListener('click', () => LayoutManager.closeSidebar());
+            backdrop.id = 'mobile-more-backdrop';
+            backdrop.className = 'mobile-more-backdrop';
+            backdrop.addEventListener('click', () => LayoutManager.closeMoreMenu());
             document.body.appendChild(backdrop);
         }
+
+        if (!document.getElementById('mobile-more-sheet')) {
+            const isFromSuperadmin = sessionStorage.getItem('employee_management_admin_from_superadmin') === 'true';
+            const sheet = document.createElement('div');
+            sheet.id = 'mobile-more-sheet';
+            sheet.className = 'mobile-more-sheet';
+            sheet.setAttribute('role', 'dialog');
+            sheet.setAttribute('aria-modal', 'true');
+            sheet.setAttribute('aria-label', 'More menu');
+            sheet.innerHTML = `
+                <div class="mobile-more-handle"></div>
+                <div class="mobile-more-title">More</div>
+                <a href="reports.html" class="mobile-more-item" data-view="reports">
+                    <i class="fas fa-chart-bar"></i><span>Reports</span>
+                </a>
+                <a href="settings.html" class="mobile-more-item" data-view="settings">
+                    <i class="fas fa-cog"></i><span>Settings</span>
+                </a>
+                ${isFromSuperadmin ? `
+                    <button type="button" class="mobile-more-item" id="mobile-back-superadmin-btn">
+                        <i class="fas fa-arrow-left"></i><span>Back to Superadmin</span>
+                    </button>
+                ` : ''}
+                <button type="button" class="mobile-more-item danger" id="mobile-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </button>
+            `;
+            document.body.appendChild(sheet);
+        }
+
+        document.getElementById('mobile-more-btn')?.addEventListener('click', () => LayoutManager.openMoreMenu());
+        document.getElementById('mobile-logout-btn')?.addEventListener('click', () => AuthManager.logout());
+        document.getElementById('mobile-back-superadmin-btn')?.addEventListener('click', () => AuthManager.backToSuperadmin?.());
+        document.querySelectorAll('.mobile-more-item[href]').forEach((item) => {
+            item.addEventListener('click', () => LayoutManager.closeMoreMenu());
+        });
+
+        LayoutManager.updateMobileNavActive();
     },
 
     closeSidebar: () => {
@@ -113,6 +222,89 @@ window.LayoutManager = {
             toggle.setAttribute('aria-label', 'Open navigation');
             toggle.innerHTML = '<i class="fas fa-bars"></i>';
         }
+        LayoutManager.closeMoreMenu();
+    },
+
+    openMoreMenu: () => {
+        document.body.classList.add('mobile-more-open');
+    },
+
+    closeMoreMenu: () => {
+        document.body.classList.remove('mobile-more-open');
+    },
+
+    updateMobileNavActive: () => {
+        const page = AppNavigation?.getCurrentView?.() || 'attendance';
+
+        document.querySelectorAll('.mobile-pwa-item[data-view], .mobile-more-item[data-view]').forEach((item) => {
+            item.classList.toggle('active', item.getAttribute('data-view') === page);
+        });
+        document.getElementById('mobile-more-btn')?.classList.toggle('active', ['reports', 'settings'].includes(page));
+    }
+};
+
+window.AppNavigation = {
+    viewToFile: {
+        dashboard: 'index.html',
+        staff: 'staff.html',
+        attendance: 'attendance.html',
+        salary: 'salary.html',
+        reports: 'reports.html',
+        settings: 'settings.html'
+    },
+
+    getCurrentView: () => {
+        const requestedView = new URLSearchParams(window.location.search).get('view');
+        if (requestedView && AppNavigation.viewToFile[requestedView]) return requestedView;
+
+        const file = window.location.pathname.split('/').pop() || 'index.html';
+        if (file === 'index.html') return 'attendance';
+
+        const view = Object.entries(AppNavigation.viewToFile)
+            .find(([, filename]) => filename === file)?.[0];
+        return view || 'attendance';
+    },
+
+    urlForView: (viewId) => {
+        if (viewId === 'dashboard') return 'index.html?view=dashboard';
+
+        const filename = AppNavigation.viewToFile[viewId] || 'index.html';
+        return filename;
+    },
+
+    bindLinks: () => {
+        document.querySelectorAll('a[data-view]').forEach((link) => {
+            if (link.dataset.spaBound === 'true') return;
+            link.dataset.spaBound = 'true';
+            link.addEventListener('click', (event) => {
+                const viewId = link.getAttribute('data-view');
+                if (!AppNavigation.viewToFile[viewId] || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+
+                event.preventDefault();
+                AppNavigation.go(viewId);
+            });
+        });
+    },
+
+    go: async (viewId, data = null, options = {}) => {
+        if (!AppNavigation.viewToFile[viewId]) return switchView(viewId, data);
+
+        await switchView(viewId, data);
+        const nextUrl = AppNavigation.urlForView(viewId);
+        if (options.replace) {
+            window.history.replaceState({ viewId }, '', nextUrl);
+        } else if (window.location.pathname.split('/').pop() !== AppNavigation.viewToFile[viewId]) {
+            window.history.pushState({ viewId }, '', nextUrl);
+        }
+        AppNavigation.syncActive(viewId);
+        LayoutManager.closeSidebar();
+    },
+
+    syncActive: (viewId) => {
+        document.querySelectorAll('[data-view]').forEach((item) => {
+            item.classList.toggle('active', item.getAttribute('data-view') === viewId);
+        });
+        LayoutManager.updateMobileNavActive?.();
     }
 };
 
@@ -120,24 +312,11 @@ function initApp() {
     let staffSearchTimer = null;
 
     BrandingManager.applyBranding();
+    HeaderManager.startClock();
 
-    // Detect current page from filename
-    const path = window.location.pathname;
-    let page = path.substring(path.lastIndexOf('/') + 1).replace('.html', '');
-    if (!page || page === 'index') page = 'dashboard';
-
-    // Sidebar Navigation handles physical page loads
-    const navItems = document.querySelectorAll('.nav-item[data-view]');
-    navItems.forEach(item => {
-        const view = item.getAttribute('data-view');
-
-        // Update active state based on current page
-        const isMatch = view === page;
-
-        item.classList.toggle('active', isMatch);
-
-        // Nav items already have href in HTML, no need for click listeners for standard navigation
-    });
+    const page = AppNavigation.getCurrentView();
+    AppNavigation.syncActive(page);
+    AppNavigation.bindLinks();
 
     // Global Search/Profile Selector Handler
     document.addEventListener('input', (e) => {
@@ -197,18 +376,16 @@ function initApp() {
     }
 
     LayoutManager.ensureMobileChrome();
+    AppNavigation.bindLinks();
+
+    window.addEventListener('popstate', () => {
+        AppNavigation.go(AppNavigation.getCurrentView(), null, { replace: true });
+    });
+
     window.addEventListener('resize', () => {
         if (window.innerWidth > 900) {
             LayoutManager.closeSidebar();
         }
-    });
-
-    document.querySelectorAll('.sidebar .nav-item').forEach((item) => {
-        item.addEventListener('click', () => {
-            if (window.innerWidth <= 900) {
-                LayoutManager.closeSidebar();
-            }
-        });
     });
 
     // Check Auth Status
@@ -222,6 +399,7 @@ async function switchView(viewId, data = null) {
 
     window.currentView = viewId;
     HeaderManager.sync(viewId, data);
+    AppNavigation.syncActive(viewId);
 
     // Check Permissions for Employee accounts
     const currentUser = AuthManager.getStoredUser();
@@ -621,24 +799,122 @@ window.setupCustomDropdown = (selectId) => {
     container._refreshCustomDropdown?.();
 };
 
-// Custom Alert / Toast (Fallback if not defined elsewhere)
-// Global Alert System
-window.showAlert = function (message) {
+// Global popup alert system
+window.showAlert = function (message, options = {}) {
     console.log('Alert:', message);
-    const toastContainer = document.getElementById('toast-container');
-    if (toastContainer) {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i class="fas fa-check-circle"></i> <span>${message}</span>`;
-        toastContainer.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
-    } else {
-        alert(message);
+
+    const text = String(message || '');
+    const inferredType = /fail|failed|error|invalid|cannot|unable/i.test(text) ? 'error' : 'success';
+    const type = options.type || inferredType;
+    const titles = { success: 'Success', error: 'Error', warning: 'Warning', info: 'Info' };
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+    };
+    const title = options.title || titles[type] || 'Success';
+    const iconClass = icons[type] || icons.success;
+    const autoCloseMs = Number(options.autoCloseMs || 2400);
+
+    const existing = document.querySelector('.app-alert-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'app-alert-overlay';
+    overlay.setAttribute('role', 'presentation');
+
+    const popup = document.createElement('div');
+    popup.className = `app-alert-popup app-alert-${type}`;
+    popup.setAttribute('role', 'alertdialog');
+    popup.setAttribute('aria-modal', 'true');
+    popup.setAttribute('aria-labelledby', 'app-alert-title');
+    popup.setAttribute('aria-describedby', 'app-alert-message');
+
+    const icon = document.createElement('div');
+    icon.className = 'app-alert-icon';
+    icon.innerHTML = `<i class="fas ${iconClass}" aria-hidden="true"></i>`;
+
+    const titleEl = document.createElement('h3');
+    titleEl.id = 'app-alert-title';
+    titleEl.textContent = title;
+
+    const highlightEl = document.createElement('div');
+    highlightEl.className = 'app-alert-highlight';
+    highlightEl.textContent = String(options.highlight || '');
+
+    const messageEl = document.createElement('p');
+    messageEl.id = 'app-alert-message';
+    messageEl.textContent = text;
+
+    const statsEl = document.createElement('div');
+    statsEl.className = 'app-alert-stats';
+    const stats = Array.isArray(options.stats) ? options.stats : [];
+    const statIcons = {
+        success: 'fa-check',
+        error: 'fa-xmark',
+        warning: 'fa-adjust',
+        info: 'fa-mug-hot'
+    };
+    stats.forEach((stat) => {
+        const chip = document.createElement('span');
+        chip.className = `app-alert-stat app-alert-stat-${stat.type || 'info'}`;
+        const iconClass = stat.icon || statIcons[stat.type] || statIcons.info;
+        chip.innerHTML = `<i class="fas ${iconClass}" aria-label="${stat.label || ''}"></i><b>${stat.value}</b>`;
+        statsEl.appendChild(chip);
+    });
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'app-alert-button';
+    button.textContent = options.buttonText || 'OK';
+
+    const close = () => {
+        overlay.classList.add('is-closing');
+        setTimeout(() => overlay.remove(), 160);
+    };
+
+    button.addEventListener('click', close);
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) close();
+    });
+
+    popup.append(icon, titleEl);
+    if (options.highlight) {
+        popup.appendChild(highlightEl);
+    }
+    popup.appendChild(messageEl);
+    if (stats.length > 0) {
+        popup.appendChild(statsEl);
+    }
+    popup.appendChild(button);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    button.focus({ preventScroll: true });
+
+    if (autoCloseMs > 0) {
+        setTimeout(close, autoCloseMs);
     }
 };
 
 // Also make it available without window prefix
 window.showAlert = window.showAlert;
+
+window.loadHtml2Pdf = () => {
+    if (window.html2pdf) return Promise.resolve(window.html2pdf);
+    if (window._html2pdfPromise) return window._html2pdfPromise;
+
+    window._html2pdfPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.async = true;
+        script.onload = () => resolve(window.html2pdf);
+        script.onerror = () => reject(new Error('PDF library load failed'));
+        document.head.appendChild(script);
+    });
+
+    return window._html2pdfPromise;
+};
 
 window.SyncStatus = {
     _hideTimer: null,

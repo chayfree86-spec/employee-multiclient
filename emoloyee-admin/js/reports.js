@@ -937,7 +937,7 @@ const ReportsManager = {
         }
     },
 
-    downloadTableAsPDF: (type) => {
+    downloadTableAsPDF: async (type) => {
         const element = document.getElementById('report-content');
         const month = parseInt(document.getElementById('report-month').value);
         const year = parseInt(document.getElementById('report-year').value);
@@ -956,13 +956,14 @@ const ReportsManager = {
         };
 
         window.showAlert(`Generating ${type} report PDF...`);
+        const html2pdf = await window.loadHtml2Pdf();
         html2pdf().set(opt).from(element).save().then(() => {
             // Restore buttons
             buttons.forEach(btn => btn.style.display = '');
         });
     },
 
-    downloadSingleStaffCalendar: (staffId, month, year, name) => {
+    downloadSingleStaffCalendar: async (staffId, month, year, name) => {
         const element = document.getElementById(`calendar-export-${staffId}`);
         const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -970,7 +971,7 @@ const ReportsManager = {
         const wrapper = document.createElement('div');
         wrapper.style.padding = '40px';
         wrapper.style.background = '#fff';
-        wrapper.style.fontFamily = "'Inter', sans-serif";
+        wrapper.style.fontFamily = "var(--app-font)";
         wrapper.innerHTML = `
             <div style="text-align:center; margin-bottom:30px; border-bottom:2px solid #3E2723; padding-bottom:15px;">
                 <h1 style="color:#3E2723; margin:0;">CAFE PREMIUM</h1>
@@ -993,6 +994,7 @@ const ReportsManager = {
             jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
 
+        const html2pdf = await window.loadHtml2Pdf();
         html2pdf().set(opt).from(wrapper).save();
     }
 };

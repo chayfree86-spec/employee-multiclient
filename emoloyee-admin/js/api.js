@@ -1,4 +1,6 @@
 const ApiClient = {
+    _workingBaseUrl: null,
+
     get configuredApiRoot() {
         const value = window.EmployeeAdminEnv?.API_BASE_URL || '';
         const configuredUrl = String(value).trim().replace(/\/+$/, '');
@@ -43,16 +45,19 @@ const ApiClient = {
     get baseUrlCandidates() {
         const origin = window.location.origin;
         const configuredBaseUrl = this.configuredBaseUrl;
-        const candidates = configuredBaseUrl
+        const fallbackCandidates = configuredBaseUrl
             ? [configuredBaseUrl]
             : [
+                `${origin}/api/v1`,
+                `${origin}/index.php/api/v1`,
                 this.gatewayUrl,
                 this.baseUrl,
                 `${this.appRoot}/index.php/api/v1`,
                 `${this.appRoot}/index.php?route=/api/v1`,
-                `${origin}/api/v1`,
-                `${origin}/index.php/api/v1`
             ];
+        const candidates = this._workingBaseUrl
+            ? [this._workingBaseUrl, ...fallbackCandidates]
+            : fallbackCandidates;
 
         return Array.from(new Set(candidates));
     },
@@ -125,6 +130,7 @@ const ApiClient = {
                     throw new Error(payload?.message || `Request failed (${response.status})`);
                 }
 
+                this._workingBaseUrl = baseUrl;
                 return payload?.data ?? null;
             } catch (error) {
                 lastError = error;
@@ -367,6 +373,34 @@ window.PayrollSettings = {
 };
 
 window.PhotoHelper = {
+    normalizeImageUrl(value = '') {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        if (/^(data:|blob:)/i.test(raw)) return raw;
+        if (/^https?:/i.test(raw)) {
+            try {
+                const url = new URL(raw);
+                if (url.origin === window.location.origin && url.pathname.startsWith('/uploads/')) {
+                    return `${ApiClient.appRoot}${url.pathname}`;
+                }
+            } catch (error) {
+                return raw;
+            }
+            return raw;
+        }
+        if (/^[^/\\]+\.(png|jpe?g|webp|gif|svg)$/i.test(raw)) return '';
+
+        const path = raw.startsWith('/')
+            ? raw
+            : `/uploads/profile/${raw.replace(/^uploads\/profile\//, '')}`;
+
+        if (path.startsWith('/uploads/')) {
+            return `${ApiClient.appRoot}${path}`;
+        }
+
+        return `${window.location.origin}${path}`;
+    },
+
     decodeName(encodedName = '') {
         try {
             return decodeURIComponent(encodedName);
@@ -500,7 +534,7 @@ const ApiSyncManager = {
             salaryAmount: Number(employee.monthly_salary || 0),
             activeHoldDays: Number(employee.active_hold_days || 0),
             activeHoldAmount: Number(employee.active_hold_amount || 0),
-            photo: employee.profile_image || null
+            photo: window.PhotoHelper.normalizeImageUrl(employee.profile_image) || null
         };
     },
 

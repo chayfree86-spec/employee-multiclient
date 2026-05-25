@@ -118,19 +118,52 @@ class BaseApiController extends ResourceController
         return rtrim($scheme . '://' . $host . $basePath, '/');
     }
 
+    private function normalizeProfileImagePath(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('#^(data:|blob:)#i', $value)) {
+            return $value;
+        }
+
+        if (preg_match('#^https?:#i', $value)) {
+            $path = parse_url($value, PHP_URL_PATH) ?: '';
+            if (!str_starts_with($path, '/uploads/')) {
+                return $value;
+            }
+
+            $diskPath = FCPATH . ltrim($path, '/');
+            if (!is_file($diskPath)) {
+                return null;
+            }
+
+            return $this->getBaseUrl() . $path;
+        }
+
+        if (!str_starts_with($value, '/')) {
+            $value = '/uploads/profile/' . preg_replace('#^uploads/profile/#', '', $value);
+        }
+
+        $diskPath = FCPATH . ltrim($value, '/');
+        if (!is_file($diskPath)) {
+            return null;
+        }
+
+        return $this->getBaseUrl() . $value;
+    }
+
     /**
-     * Recursively prepend base URL to any profile_image fields that are relative paths
+     * Recursively normalize profile_image fields and drop stale upload paths.
      */
     private function addImageBaseUrl($data)
     {
         if (is_array($data)) {
             foreach ($data as $key => $value) {
                 if ($key === 'profile_image' && is_string($value) && !empty($value)) {
-                    // Only prepend base URL if it's a relative path (starts with /)
-                    // If it already has http/https, leave it as-is
-                    if (str_starts_with($value, '/')) {
-                        $data[$key] = $this->getBaseUrl() . $value;
-                    }
+                    $data[$key] = $this->normalizeProfileImagePath($value);
                 } else {
                     $data[$key] = $this->addImageBaseUrl($value);
                 }
@@ -138,9 +171,7 @@ class BaseApiController extends ResourceController
         } elseif (is_object($data)) {
             foreach ($data as $key => $value) {
                 if ($key === 'profile_image' && is_string($value) && !empty($value)) {
-                    if (str_starts_with($value, '/')) {
-                        $data->$key = $this->getBaseUrl() . $value;
-                    }
+                    $data->$key = $this->normalizeProfileImagePath($value);
                 } else {
                     $data->$key = $this->addImageBaseUrl($value);
                 }

@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cafe Attendance & Salary Management</title>
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <!-- Local App Font -->
+    <link rel="preload" href="assets/fonts/google-sans-flex/GoogleSansFlex-400.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="assets/fonts/google-sans-flex/GoogleSansFlex-700.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="assets/fonts/google-sans-flex/GoogleSansFlex-800.ttf" as="font" type="font/ttf" crossorigin>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Flatpickr (Date Picker) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
-    <link rel="stylesheet" href="style.css?v=20260501-10">
+    <link rel="stylesheet" href="style.css?v=20260525-26">
 </head>
 
 <body class="theme-cafe">
@@ -63,7 +63,7 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
-                <a href="index.html" class="nav-item" data-view="dashboard">
+                <a href="index.html?view=dashboard" class="nav-item" data-view="dashboard">
                     <i class="fas fa-th-large"></i>
                     <span>Dashboard</span>
                 </a>
@@ -154,20 +154,19 @@
     <div id="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="js/storage.js?v=20260501-1"></script>
-    <script src="env.js?v=20260427-1"></script>
-    <script src="js/api.js?v=20260501-5"></script>
-    <script src="js/theme.js?v=20260313-1"></script>
-    <script src="js/auth.js?v=20260501-1"></script>
-    <script src="js/staff.js?v=20260501-18"></script>
-    <script src="js/attendance.js?v=20260501-4"></script>
-    <script src="js/salary.js?v=20260501-11"></script>
-    <script src="js/reports.js?v=20260501-7"></script>
-    <script src="js/settings.js?v=20260501-1"></script>
-    <script src="js/main.js?v=20260501-3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js" defer></script>
+    <script src="js/storage.js?v=20260501-1" defer></script>
+    <script src="env.js?v=20260427-1" defer></script>
+    <script src="js/api.js?v=20260525-8" defer></script>
+    <script src="js/theme.js?v=20260313-1" defer></script>
+    <script src="js/auth.js?v=20260525-10" defer></script>
+    <script src="js/staff.js?v=20260501-18" defer></script>
+    <script src="js/attendance.js?v=20260501-4" defer></script>
+    <script src="js/salary.js?v=20260525-13" defer></script>
+    <script src="js/reports.js?v=20260525-2" defer></script>
+    <script src="js/settings.js?v=20260501-1" defer></script>
+    <script src="js/main.js?v=20260525-10" defer></script>
 </body>
 
 </html>

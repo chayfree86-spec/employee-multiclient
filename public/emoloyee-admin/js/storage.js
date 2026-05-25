@@ -6,6 +6,7 @@ const StorageManager = {
         'business_address',
         'business_phone',
         'business_email',
+        'business_logo',
         'theme',
         'auto_hold_enabled',
         'auto_hold_days',
@@ -63,6 +64,7 @@ const StorageManager = {
             business_address: saved.business_address || 'Near Clock Tower, Main Market, City',
             business_phone: saved.business_phone || '+91 98765 43210',
             business_email: saved.business_email || 'info@cafepremium.com',
+            business_logo: saved.business_logo || '',
             auto_hold_enabled: saved.auto_hold_enabled || false,
             auto_hold_days: saved.auto_hold_days || 0,
             theme: saved.theme || 'theme-cafe',
@@ -77,8 +79,27 @@ const StorageManager = {
             employee_logins: saved.employee_logins || [],
             payroll_settings: saved.payroll_settings || null
         };
+        StorageManager.sanitizeImageCache(StorageManager._dbCache);
 
         return StorageManager._dbCache;
+    },
+
+    sanitizeImageCache: (value) => {
+        if (!value || typeof value !== 'object') return;
+
+        Object.keys(value).forEach((key) => {
+            const item = value[key];
+            if (item && typeof item === 'object') {
+                StorageManager.sanitizeImageCache(item);
+                return;
+            }
+
+            if (!['photo', 'profile_image', 'business_logo'].includes(key)) return;
+            if (typeof item !== 'string') return;
+            if (/^[^/\\]+\.(png|jpe?g|webp|gif|svg)$/i.test(item.trim())) {
+                value[key] = '';
+            }
+        });
     },
 
     persistLocalSettings: () => {

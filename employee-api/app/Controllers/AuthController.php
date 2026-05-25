@@ -12,7 +12,7 @@ class AuthController extends BaseApiController
     public function login()
     {
         $json = $this->request->getJSON();
-        $username = $json->username ?? $json->mobile ?? $this->request->getPost('username') ?? $this->request->getPost('mobile');
+        $username = trim((string) ($json->username ?? $json->mobile ?? $this->request->getPost('username') ?? $this->request->getPost('mobile') ?? ''));
         $password = $json->password ?? $this->request->getPost('password');
 
         if (empty($username) || empty($password)) {
@@ -23,11 +23,20 @@ class AuthController extends BaseApiController
         $user = $model->groupStart()
             ->where('mobile', $username)
             ->orWhere('username', $username)
+            ->orWhere('email', $username)
+            ->orWhere('business_name', $username)
             ->groupEnd()
             ->first();
 
-        if (!$user || !password_verify((string)$password, $user['password'])) {
-            return $this->respondError('Invalid credentials', 401);
+        if (!$user || !$this->passwordMatches((string) $password, (string) ($user['password'] ?? ''))) {
+            return $this->respondError('Invalid login details. Please check username/mobile/email and password.', 401);
+        }
+
+        if (password_get_info((string) $user['password'])['algo'] === 0) {
+            $model->builder()->where('id', $user['id'])->update([
+                'password' => password_hash((string) $password, PASSWORD_DEFAULT),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
         }
 
         if (!empty($user['created_at']) && strtotime((string) $user['created_at']) <= strtotime('-365 days')) {
@@ -55,6 +64,19 @@ class AuthController extends BaseApiController
     {
         // For API, logout is usually handled client-side by deleting the token.
         return $this->respondSuccess(null, 'Logged out successfully');
+    }
+
+    private function passwordMatches(string $inputPassword, string $storedPassword): bool
+    {
+        if ($storedPassword === '') {
+            return false;
+        }
+
+        if (password_get_info($storedPassword)['algo'] !== 0) {
+            return password_verify($inputPassword, $storedPassword);
+        }
+
+        return hash_equals($storedPassword, $inputPassword);
     }
 
     public function forgotPassword()
