@@ -43,6 +43,8 @@ class SuperadminController extends BaseApiController
             return $superadminId;
         }
 
+        $this->deactivateExpiredUsers();
+
         $users = (new UserModel())
             ->select('users.id, users.username, users.mobile, users.email, users.role, users.status, users.owner_name, users.business_name, users.address, users.created_at, COUNT(employees.id) AS employee_count')
             ->join('employees', 'employees.user_id = users.id', 'left')
@@ -147,6 +149,13 @@ class SuperadminController extends BaseApiController
             }
         }
 
+        if (array_key_exists('created_at', $data)) {
+            $createdAt = $this->normalizeCreatedAt((string) $data['created_at']);
+            if ($createdAt !== null) {
+                $payload['created_at'] = $createdAt;
+            }
+        }
+
         if (!empty($data['password'])) {
             $payload['password'] = (string) $data['password'];
         }
@@ -162,6 +171,34 @@ class SuperadminController extends BaseApiController
         }
 
         return $this->filterBlankValues($payload);
+    }
+
+    private function normalizeCreatedAt(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        try {
+            $date = new \DateTimeImmutable($value);
+            return $date->format('Y-m-d 00:00:00');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function deactivateExpiredUsers(): void
+    {
+        \Config\Database::connect()
+            ->table('users')
+            ->where('status', 'active')
+            ->where('created_at IS NOT NULL', null, false)
+            ->where('created_at <=', date('Y-m-d H:i:s', strtotime('-365 days')))
+            ->update([
+                'status' => 'inactive',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
     }
 
     private function userExists(UserModel $model, string $mobile, ?string $email, ?string $username): bool

@@ -4,95 +4,696 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Superadmin - Employee Multiclient</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --ink:#14120f; --muted:#70685f; --line:#e7e0d8; --brand:#0b7c3d; --danger:#d63031; --panel:#fff; --bg:#f7f4ef; }
-        * { box-sizing:border-box; }
-        body { margin:0; font-family:Inter, sans-serif; background:var(--bg); color:var(--ink); }
-        .shell { min-height:100vh; display:grid; grid-template-columns:260px 1fr; }
-        aside { background:#342b25; color:#fff; padding:24px; }
-        .brand { font-size:20px; font-weight:800; display:flex; gap:10px; align-items:center; }
-        .brand i { color:#c8a97e; }
-        main { padding:28px; }
-        .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; gap:16px; }
-        h1 { margin:0; font-size:28px; }
-        .muted { color:var(--muted); font-size:14px; }
-        .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(35,25,16,.05); }
-        .login { max-width:420px; margin:8vh auto; }
-        label { display:block; font-weight:700; font-size:13px; margin:14px 0 6px; }
-        input, select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
-        button { border:0; border-radius:12px; padding:11px 14px; font-weight:800; cursor:pointer; font:inherit; }
-        .primary { background:var(--brand); color:#fff; }
-        .ghost { background:#f0ece7; color:var(--ink); }
-        .danger { background:rgba(214,48,49,.1); color:var(--danger); }
-        .toolbar { display:flex; gap:10px; align-items:center; }
-        table { width:100%; border-collapse:collapse; }
-        th, td { padding:12px 10px; border-bottom:1px solid var(--line); text-align:left; font-size:14px; }
-        th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-        .status { display:inline-flex; padding:5px 9px; border-radius:999px; font-weight:800; font-size:12px; }
-        .active { color:#08753a; background:#dff7ea; }
-        .inactive { color:#9b2525; background:#fde2e2; }
-        .hidden { display:none !important; }
-        .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-        dialog { border:0; border-radius:18px; padding:0; width:min(620px, calc(100vw - 24px)); }
-        dialog::backdrop { background:rgba(0,0,0,.35); }
-        @media (max-width:760px) { .shell { grid-template-columns:1fr; } aside { display:none; } main { padding:16px; } .grid { grid-template-columns:1fr; } }
+        :root {
+            --bg: #F7F5F2;
+            --panel: #fff;
+            --panel-soft: #fbfaf8;
+            --ink: #191512;
+            --muted: #776f66;
+            --soft: #9b9288;
+            --line: #e6ded5;
+            --line-strong: #d7cdc1;
+            --brand: #15803D;
+            --brand-dark: #0f6a32;
+            --danger: #dc2626;
+            --danger-soft: #fee2e2;
+            --warning-soft: #fef3c7;
+            --success-soft: #dcfce7;
+            --sidebar-a: #211b18;
+            --sidebar-b: #3b2f29;
+            --sidebar-c: #171311;
+            --shadow: 0 22px 60px rgba(42, 32, 24, .09);
+            --shadow-soft: 0 12px 32px rgba(42, 32, 24, .07);
+            --radius: 18px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 20% 0%, rgba(255,255,255,.9), transparent 34rem),
+                linear-gradient(135deg, #F7F5F2 0%, #f2eee8 100%);
+        }
+
+        button, input, select { font: inherit; }
+
+        button {
+            border: 0;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+        button:hover { transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        button:disabled { cursor: not-allowed; opacity: .5; transform: none; }
+
+        input, select {
+            width: 100%;
+            min-height: 44px;
+            padding: 11px 13px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--ink);
+            background: #fff;
+            outline: none;
+            transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+        }
+
+        input:focus, select:focus {
+            border-color: rgba(21, 128, 61, .45);
+            box-shadow: 0 0 0 4px rgba(21, 128, 61, .10);
+        }
+
+        label {
+            display: block;
+            margin: 0 0 7px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #5f574f;
+        }
+
+        .hidden { display: none !important; }
+        .muted { color: var(--muted); }
+
+        .login-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .login-card {
+            width: min(448px, 100%);
+            padding: 34px;
+            border: 1px solid rgba(230, 222, 213, .9);
+            border-radius: 24px;
+            background: rgba(255, 255, 255, .92);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(14px);
+        }
+
+        .login-mark {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 22px;
+            border-radius: 16px;
+            color: #f2c17a;
+            background: linear-gradient(145deg, #211b18, #44362f);
+            box-shadow: 0 14px 26px rgba(35, 27, 23, .22);
+        }
+
+        .login-card h1 {
+            margin: 0;
+            font-size: 30px;
+            line-height: 1.1;
+            letter-spacing: 0;
+        }
+
+        .login-card p {
+            margin: 10px 0 26px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .field-stack { display: grid; gap: 16px; }
+
+        .shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 272px minmax(0, 1fr);
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 24px;
+            color: #fff;
+            background:
+                linear-gradient(165deg, rgba(242, 193, 122, .12), transparent 28%),
+                linear-gradient(180deg, var(--sidebar-b), var(--sidebar-a) 48%, var(--sidebar-c));
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .brand-badge {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(242, 193, 122, .35);
+            border-radius: 12px;
+            color: #f2c17a;
+            background: rgba(255, 255, 255, .06);
+        }
+
+        .sidebar-subtitle {
+            margin: 8px 0 28px 48px;
+            color: #d7cdc1;
+            font-size: 13px;
+        }
+
+        .nav-card {
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .055);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 12px;
+            border-radius: 12px;
+            color: #f6efe7;
+            font-size: 14px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .main {
+            min-width: 0;
+            padding: 32px;
+        }
+
+        .top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--brand);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        h1, h2 { margin: 0; letter-spacing: 0; }
+
+        .page-title {
+            font-size: clamp(30px, 4vw, 42px);
+            line-height: 1.05;
+        }
+
+        .page-subtitle {
+            max-width: 540px;
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: var(--brand);
+            box-shadow: 0 12px 22px rgba(21, 128, 61, .20);
+        }
+
+        .btn-primary:hover { background: var(--brand-dark); }
+
+        .btn-light {
+            color: var(--ink);
+            border: 1px solid transparent;
+            background: #efebe6;
+        }
+
+        .btn-outline {
+            color: #332b25;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, .72);
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 1px solid var(--line);
+            color: #4a423a;
+            background: #f4f0eb;
+        }
+
+        .btn-icon:hover, .btn-light:hover, .btn-outline:hover {
+            border-color: var(--line-strong);
+            background: #fff;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-icon.success { color: var(--brand); background: #eef8f1; }
+        .btn-icon.danger { color: var(--danger); background: #fff1f1; }
+
+        .table-card {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .table-tools {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) 180px auto;
+            gap: 12px;
+            align-items: center;
+            padding: 18px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, #fff, var(--panel-soft));
+        }
+
+        .search-wrap { position: relative; }
+        .search-wrap i {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            color: var(--soft);
+            transform: translateY(-50%);
+        }
+
+        .search-wrap input { padding-left: 40px; }
+
+        .counter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 9px 13px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: #463f38;
+            font-size: 13px;
+            font-weight: 800;
+            background: #fff;
+        }
+
+        .table-scroll {
+            max-height: calc(100vh - 290px);
+            min-height: 240px;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1080px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--line);
+            color: #645b52;
+            background: rgba(251, 250, 248, .96);
+            font-size: 11px;
+            font-weight: 800;
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        tbody td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #eee7df;
+            color: #2b2621;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        tbody tr:hover {
+            background: #fbf8f4;
+            box-shadow: inset 3px 0 0 rgba(21, 128, 61, .72);
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 220px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+            background: linear-gradient(145deg, #332923, #705744);
+            box-shadow: 0 8px 18px rgba(57, 43, 34, .18);
+        }
+
+        .user-name { font-weight: 800; }
+        .user-sub { margin-top: 3px; color: var(--muted); font-size: 12px; }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: capitalize;
+        }
+
+        .status.active { color: #08753a; background: var(--success-soft); }
+        .status.inactive { color: #b91c1c; background: var(--danger-soft); }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 18px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .pager-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            gap: 14px;
+            padding: 54px 20px 58px;
+            text-align: center;
+        }
+
+        .empty-art {
+            width: 96px;
+            height: 96px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 28px;
+            color: var(--brand);
+            background:
+                linear-gradient(145deg, #fff, #f2eee8);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .empty-art i { font-size: 34px; }
+        .empty-state h3 { margin: 0; font-size: 18px; }
+        .empty-state p { max-width: 390px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+        dialog {
+            width: min(680px, calc(100vw - 28px));
+            padding: 0;
+            border: 0;
+            border-radius: 22px;
+            background: transparent;
+        }
+
+        dialog::backdrop {
+            background: rgba(24, 19, 16, .42);
+            backdrop-filter: blur(6px);
+        }
+
+        .modal-card {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: #fff;
+            box-shadow: 0 30px 80px rgba(24, 19, 16, .22);
+        }
+
+        .modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 22px 24px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, #fff, #fbfaf8);
+        }
+
+        .modal-head h2 { font-size: 22px; }
+        .modal-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+
+        .modal-body { padding: 24px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .span-all { grid-column: 1 / -1; }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 18px 24px 24px;
+        }
+
+        @media (max-width: 920px) {
+            .shell { grid-template-columns: 1fr; }
+            .sidebar {
+                position: static;
+                height: auto;
+                padding: 18px 20px;
+            }
+            .sidebar-subtitle, .nav-card { display: none; }
+            .main { padding: 24px 18px; }
+            .top { flex-direction: column; }
+            .table-tools { grid-template-columns: 1fr 160px; }
+            .counter { grid-column: 1 / -1; justify-content: flex-start; }
+        }
+
+        @media (max-width: 640px) {
+            .login-card { padding: 26px; }
+            .toolbar { width: 100%; }
+            .toolbar .btn-primary, .toolbar .btn-outline { flex: 1; }
+            .table-tools { grid-template-columns: 1fr; }
+            .pagination { align-items: flex-start; flex-direction: column; }
+            .grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <section id="login" class="login card">
-        <h1>Superadmin Login</h1>
-        <p class="muted">Manage business users and access status.</p>
-        <label>Mobile</label>
-        <input id="login-mobile" value="9628717175" inputmode="numeric">
-        <label>Password</label>
-        <input id="login-password" type="password" value="123456">
-        <button class="primary" style="width:100%; margin-top:18px;" onclick="login()">Login</button>
+    <section id="login" class="login-page">
+        <div class="login-card">
+            <div class="login-mark"><i class="fas fa-shield-halved"></i></div>
+            <h1>Superadmin Login</h1>
+            <p>Secure access for managing business users, activation status, and employee access.</p>
+            <div class="field-stack">
+                <div>
+                    <label for="login-mobile">Mobile</label>
+                    <input id="login-mobile" value="9628717175" inputmode="numeric" autocomplete="username">
+                </div>
+                <div>
+                    <label for="login-password">Password</label>
+                    <input id="login-password" type="password" value="123456" autocomplete="current-password">
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%; margin-top:22px;" onclick="login()">
+                <i class="fas fa-arrow-right-to-bracket"></i>
+                Login
+            </button>
+        </div>
     </section>
 
     <section id="app" class="shell hidden">
-        <aside>
-            <div class="brand"><i class="fas fa-shield-halved"></i> Superadmin</div>
-            <p class="muted" style="color:#cfc5bc;">Employee Multiclient</p>
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-badge"><i class="fas fa-shield-halved"></i></span>
+                <span>Superadmin</span>
+            </div>
+            <p class="sidebar-subtitle">Employee Multiclient</p>
+            <div class="nav-card">
+                <div class="nav-item"><i class="fas fa-users-gear"></i> Users Management</div>
+            </div>
         </aside>
-        <main>
+        <main class="main">
             <div class="top">
                 <div>
-                    <h1>Users</h1>
-                    <p class="muted">Create, edit, delete, activate or deactivate business users.</p>
+                    <p class="eyebrow">Admin Console</p>
+                    <h1 class="page-title">Users</h1>
+                    <p class="page-subtitle">Manage business users, activation status, and employee access.</p>
                 </div>
                 <div class="toolbar">
-                    <button class="ghost" onclick="loadUsers()"><i class="fas fa-rotate"></i></button>
-                    <button class="primary" onclick="openUserModal()"><i class="fas fa-plus"></i> New User</button>
-                    <button class="ghost" onclick="logout()">Logout</button>
+                    <button class="btn-icon" onclick="loadUsers()" title="Refresh users" aria-label="Refresh users">
+                        <i class="fas fa-rotate"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="openUserModal()">
+                        <i class="fas fa-plus"></i>
+                        New User
+                    </button>
+                    <button class="btn btn-outline" onclick="logout()">Logout</button>
                 </div>
             </div>
-            <div class="card">
-                <table>
-                    <thead><tr><th>User</th><th>Mobile</th><th>Email</th><th>Staff</th><th>Status</th><th>Actions</th></tr></thead>
-                    <tbody id="users-body"></tbody>
-                </table>
+
+            <div class="table-card">
+                <div class="table-tools">
+                    <div class="search-wrap">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <input id="user-search" type="search" placeholder="Search users, mobile, or email" oninput="handleUserSearch()">
+                    </div>
+                    <select id="status-filter" onchange="handleStatusFilter()" aria-label="Filter by status">
+                        <option value="all">All status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Deactivated</option>
+                    </select>
+                    <div class="counter" id="users-counter">0 users</div>
+                </div>
+
+                <div class="table-scroll" id="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Mobile</th>
+                                <th>Email</th>
+                                <th>Staff Count</th>
+                                <th>Creation Date</th>
+                                <th>Days Count</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-body"></tbody>
+                    </table>
+                    <div id="empty-state" class="empty-state hidden">
+                        <div class="empty-art"><i class="fas fa-user-plus"></i></div>
+                        <h3>No users found</h3>
+                        <p>Add a new business user or adjust the current search and status filter.</p>
+                    </div>
+                </div>
+
+                <div class="pagination">
+                    <span id="pagination-label">Showing 0 users</span>
+                    <div class="pager-buttons">
+                        <button class="btn-icon" id="prev-page" onclick="changePage(-1)" title="Previous page" aria-label="Previous page">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="btn-icon" id="next-page" onclick="changePage(1)" title="Next page" aria-label="Next page">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
     </section>
 
     <dialog id="user-dialog">
-        <div class="card">
-            <h2 id="dialog-title">New User</h2>
-            <input id="user-id" type="hidden">
-            <div class="grid">
-                <div><label>Business/User Name</label><input id="username"></div>
-                <div><label>Owner Name</label><input id="owner_name"></div>
-                <div><label>Mobile</label><input id="mobile" inputmode="numeric"></div>
-                <div><label>Email</label><input id="email" type="email"></div>
-                <div><label>Password</label><input id="password" type="password" placeholder="Leave blank while editing"></div>
-                <div><label>Status</label><select id="status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
-                <div style="grid-column:1/-1;"><label>Address</label><input id="address"></div>
+        <div class="modal-card">
+            <div class="modal-head">
+                <div>
+                    <h2 id="dialog-title">New User</h2>
+                    <p id="dialog-subtitle">Create business access for a client workspace.</p>
+                </div>
+                <button class="btn-icon" onclick="closeUserModal()" title="Close" aria-label="Close">
+                    <i class="fas fa-xmark"></i>
+                </button>
             </div>
-            <div class="toolbar" style="justify-content:flex-end; margin-top:18px;">
-                <button class="ghost" onclick="closeUserModal()">Cancel</button>
-                <button class="primary" onclick="saveUser()">Save</button>
+            <div class="modal-body">
+                <input id="user-id" type="hidden">
+                <div class="grid">
+                    <div>
+                        <label for="username">Business/User Name</label>
+                        <input id="username" autocomplete="organization">
+                    </div>
+                    <div>
+                        <label for="owner_name">Owner Name</label>
+                        <input id="owner_name" autocomplete="name">
+                    </div>
+                    <div>
+                        <label for="mobile">Mobile</label>
+                        <input id="mobile" inputmode="numeric" autocomplete="tel">
+                    </div>
+                    <div>
+                        <label for="email">Email</label>
+                        <input id="email" type="email" autocomplete="email">
+                    </div>
+                    <div>
+                        <label for="password">Password</label>
+                        <input id="password" type="password" placeholder="Leave blank while editing" autocomplete="new-password">
+                    </div>
+                    <div>
+                        <label for="status">Status</label>
+                        <select id="status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Deactivated</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="created_at">Creation Date</label>
+                        <input id="created_at" type="date">
+                    </div>
+                    <div class="span-all">
+                        <label for="address">Address</label>
+                        <input id="address" autocomplete="street-address">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-light" onclick="closeUserModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveUser()">
+                    <i class="fas fa-check"></i>
+                    Save User
+                </button>
             </div>
         </div>
     </dialog>
@@ -100,7 +701,9 @@
     <script>
         const api = '/api/v1';
         const tokenKey = 'employee_superadmin_token';
+        const pageSize = 8;
         let users = [];
+        let currentPage = 1;
 
         function headers() {
             const token = sessionStorage.getItem(tokenKey);
@@ -118,49 +721,166 @@
             try {
                 const data = await request('/superadmin/login', {
                     method: 'POST',
-                    body: JSON.stringify({ mobile: document.getElementById('login-mobile').value, password: document.getElementById('login-password').value })
+                    body: JSON.stringify({
+                        mobile: document.getElementById('login-mobile').value,
+                        password: document.getElementById('login-password').value
+                    })
                 });
                 sessionStorage.setItem(tokenKey, data.token);
                 document.getElementById('login').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
                 await loadUsers();
-            } catch (error) { alert(error.message); }
+            } catch (error) {
+                alert(error.message);
+            }
         }
 
         async function loadUsers() {
             users = await request('/superadmin/users');
-            document.getElementById('users-body').innerHTML = users.map((user) => `
-                <tr>
-                    <td><strong>${escapeHtml(user.business_name || user.username)}</strong><div class="muted">${escapeHtml(user.owner_name || user.username || '')}</div></td>
-                    <td>${escapeHtml(user.mobile || '')}</td>
-                    <td>${escapeHtml(user.email || '')}</td>
-                    <td>${user.employee_count || 0}</td>
-                    <td><span class="status ${user.status}">${String(user.status || '').toUpperCase()}</span></td>
-                    <td class="toolbar">
-                        <button class="ghost" onclick="openUserModal(${user.id})"><i class="fas fa-pen"></i></button>
-                        <button class="${user.status === 'active' ? 'danger' : 'ghost'}" onclick="toggleUser(${user.id})">${user.status === 'active' ? 'Deactivate' : 'Activate'}</button>
-                        ${Number(user.id) === 1 ? '' : `<button class="danger" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>`}
-                    </td>
-                </tr>`).join('');
+            currentPage = 1;
+            renderUsers();
+        }
+
+        function getFilteredUsers() {
+            const search = document.getElementById('user-search')?.value.trim().toLowerCase() || '';
+            const status = document.getElementById('status-filter')?.value || 'all';
+
+            return users.filter((user) => {
+                const statusMatch = status === 'all' || String(user.status || '').toLowerCase() === status;
+                const searchBlob = [
+                    user.business_name,
+                    user.username,
+                    user.owner_name,
+                    user.mobile,
+                    user.email
+                ].join(' ').toLowerCase();
+                return statusMatch && (!search || searchBlob.includes(search));
+            });
+        }
+
+        function renderUsers() {
+            const filtered = getFilteredUsers();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+            currentPage = Math.min(currentPage, totalPages);
+            const start = (currentPage - 1) * pageSize;
+            const pageUsers = filtered.slice(start, start + pageSize);
+            const hasRows = pageUsers.length > 0;
+
+            document.getElementById('users-body').innerHTML = pageUsers.map((user) => {
+                const lifecycle = getUserLifecycle(user.created_at);
+                const isActive = user.status === 'active' && !lifecycle.expired;
+                const displayName = user.business_name || user.username || 'User';
+                const ownerName = user.owner_name || user.username || '';
+                return `
+                    <tr onclick="openUserPanel(${user.id})" title="Open user panel">
+                        <td>
+                            <div class="user-cell">
+                                <span class="avatar">${escapeHtml(initials(displayName, ownerName))}</span>
+                                <div>
+                                    <div class="user-name">${escapeHtml(displayName)}</div>
+                                    <div class="user-sub">${escapeHtml(ownerName)}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${escapeHtml(user.mobile || '-')}</td>
+                        <td>${escapeHtml(user.email || '-')}</td>
+                        <td>${user.employee_count || 0}</td>
+                        <td>${escapeHtml(formatDate(user.created_at))}</td>
+                        <td><span class="status ${lifecycle.expired ? 'inactive' : 'active'}">${escapeHtml(lifecycle.label)}</span></td>
+                        <td><span class="status ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Deactivated'}</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-icon" onclick="event.stopPropagation(); openUserModal(${user.id})" title="Edit user" aria-label="Edit user">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="btn-icon ${isActive ? 'danger' : 'success'}" onclick="event.stopPropagation(); toggleUser(${user.id})" title="${isActive ? 'Deactivate user' : 'Activate user'}" aria-label="${isActive ? 'Deactivate user' : 'Activate user'}">
+                                    <i class="fas ${isActive ? 'fa-toggle-off' : 'fa-toggle-on'}"></i>
+                                </button>
+                                ${Number(user.id) === 1 ? '' : `
+                                    <button class="btn-icon danger" onclick="event.stopPropagation(); deleteUser(${user.id})" title="Delete user" aria-label="Delete user">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                `}
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            document.querySelector('table').classList.toggle('hidden', !hasRows);
+            document.getElementById('empty-state').classList.toggle('hidden', hasRows);
+            document.getElementById('users-counter').textContent = `${filtered.length} ${filtered.length === 1 ? 'user' : 'users'}`;
+            document.getElementById('pagination-label').textContent = filtered.length
+                ? `Showing ${start + 1}-${Math.min(start + pageSize, filtered.length)} of ${filtered.length} users`
+                : 'Showing 0 users';
+            document.getElementById('prev-page').disabled = currentPage <= 1;
+            document.getElementById('next-page').disabled = currentPage >= totalPages;
+        }
+
+        function handleUserSearch() {
+            currentPage = 1;
+            renderUsers();
+        }
+
+        function handleStatusFilter() {
+            currentPage = 1;
+            renderUsers();
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderUsers();
+        }
+
+        function openUserPanel(id) {
+            const user = users.find((item) => Number(item.id) === Number(id));
+            if (!user) return;
+
+            const token = btoa(JSON.stringify({
+                type: 'user',
+                id: Number(user.id),
+                label: user.username || user.mobile || String(user.id),
+                iat: Math.floor(Date.now() / 1000)
+            }));
+            const displayUser = {
+                ...user,
+                role: user.role || 'Administrator',
+                name: user.business_name || user.owner_name || user.username || 'Admin User'
+            };
+
+            sessionStorage.setItem('employee_management_admin_logged_in', 'true');
+            sessionStorage.setItem('employee_management_admin_token', token);
+            sessionStorage.setItem('employee_management_admin_username', user.username || user.mobile || '');
+            sessionStorage.setItem('employee_management_admin_user', JSON.stringify(displayUser));
+            sessionStorage.setItem('employee_management_admin_from_superadmin', 'true');
+            window.location.href = '/emoloyee-admin/index.html';
         }
 
         function openUserModal(id = null) {
             const user = users.find((item) => Number(item.id) === Number(id)) || {};
             document.getElementById('dialog-title').textContent = id ? 'Edit User' : 'New User';
-            for (const key of ['user-id','username','owner_name','mobile','email','password','status','address']) {
+            document.getElementById('dialog-subtitle').textContent = id ? 'Update user details and access status.' : 'Create business access for a client workspace.';
+            for (const key of ['user-id','username','owner_name','mobile','email','password','status','created_at','address']) {
                 const el = document.getElementById(key);
                 const field = key === 'user-id' ? 'id' : key;
-                el.value = key === 'password' ? '' : (user[field] || (key === 'status' ? 'active' : ''));
+                if (key === 'password') {
+                    el.value = '';
+                } else if (key === 'created_at') {
+                    el.value = toDateInputValue(user.created_at) || todayInputValue();
+                } else {
+                    el.value = user[field] || (key === 'status' ? 'active' : '');
+                }
             }
             document.getElementById('user-dialog').showModal();
         }
 
-        function closeUserModal() { document.getElementById('user-dialog').close(); }
+        function closeUserModal() {
+            document.getElementById('user-dialog').close();
+        }
 
         async function saveUser() {
             const id = document.getElementById('user-id').value;
             const body = {};
-            for (const key of ['username','owner_name','mobile','email','password','status','address']) {
+            for (const key of ['username','owner_name','mobile','email','password','status','created_at','address']) {
                 const value = document.getElementById(key).value.trim();
                 if (value) body[key] = value;
             }
@@ -181,8 +901,65 @@
             await loadUsers();
         }
 
-        function logout() { sessionStorage.removeItem(tokenKey); location.reload(); }
-        function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+        function logout() {
+            sessionStorage.removeItem(tokenKey);
+            location.reload();
+        }
+
+        function initials(name, fallback = '') {
+            const parts = String(name || fallback || 'User').trim().split(/\s+/).filter(Boolean);
+            return (parts[0]?.[0] || 'U') + (parts[1]?.[0] || '');
+        }
+
+        function getUserLifecycle(createdAt) {
+            const created = parseDate(createdAt);
+            if (!created) {
+                return { label: '-', expired: false };
+            }
+
+            const now = new Date();
+            const elapsedMs = startOfDay(now) - startOfDay(created);
+            const usedDays = Math.max(0, Math.floor(elapsedMs / 86400000));
+            const remainingDays = Math.max(0, 365 - usedDays);
+            return {
+                label: remainingDays > 0 ? `${remainingDays} days left` : 'Expired',
+                expired: usedDays >= 365
+            };
+        }
+
+        function formatDate(value) {
+            const date = parseDate(value);
+            if (!date) return '-';
+            return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function toDateInputValue(value) {
+            const date = parseDate(value);
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function todayInputValue() {
+            return toDateInputValue(new Date());
+        }
+
+        function parseDate(value) {
+            if (!value) return null;
+            const normalized = String(value).replace(' ', 'T');
+            const date = new Date(normalized);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function startOfDay(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
 
         if (sessionStorage.getItem(tokenKey)) {
             document.getElementById('login').classList.add('hidden');

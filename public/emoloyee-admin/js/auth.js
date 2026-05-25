@@ -235,7 +235,34 @@ const AuthManager = {
         sessionStorage.removeItem(AuthManager.storageKey('token'));
         sessionStorage.removeItem(AuthManager.storageKey('username'));
         sessionStorage.removeItem(AuthManager.storageKey('user'));
+        sessionStorage.removeItem(AuthManager.storageKey('from_superadmin'));
         location.reload();
+    },
+
+    backToSuperadmin: () => {
+        sessionStorage.removeItem(AuthManager.storageKey('logged_in'));
+        sessionStorage.removeItem(AuthManager.storageKey('token'));
+        sessionStorage.removeItem(AuthManager.storageKey('username'));
+        sessionStorage.removeItem(AuthManager.storageKey('user'));
+        sessionStorage.removeItem(AuthManager.storageKey('from_superadmin'));
+        window.location.href = '/superadmin/index.html';
+    },
+
+    renderSuperadminBackButton: () => {
+        if (sessionStorage.getItem(AuthManager.storageKey('from_superadmin')) !== 'true') return;
+        if (document.getElementById('back-superadmin-btn')) return;
+
+        const sidebarBottom = document.querySelector('.sidebar-bottom');
+        if (!sidebarBottom) return;
+
+        const button = document.createElement('button');
+        button.id = 'back-superadmin-btn';
+        button.className = 'nav-item';
+        button.type = 'button';
+        button.innerHTML = '<i class="fas fa-arrow-left"></i><span>Back to Superadmin</span>';
+        button.style.cssText = 'border:none; cursor:pointer; width:100%; margin-bottom:0.5rem; background:rgba(200,169,126,0.16); color:var(--sidebar-text);';
+        button.addEventListener('click', AuthManager.backToSuperadmin);
+        sidebarBottom.insertBefore(button, sidebarBottom.firstChild);
     }
 };
 
@@ -252,4 +279,5 @@ document.addEventListener('DOMContentLoaded', () => {
             await AuthManager.showProfileImageModal();
         });
     }
+    AuthManager.renderSuperadminBackButton();
 });

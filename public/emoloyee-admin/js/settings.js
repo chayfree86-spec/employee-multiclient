@@ -86,6 +86,7 @@ const SettingsManager = {
         const displayRole = user?.role || 'Administrator';
         const encodedName = encodeURIComponent(displayName);
         const avatarSrc = user?.profile_image || window.PhotoHelper.avatarUrl(encodedName, 'C8A97E', 'fff', 120);
+        const logoSrc = user?.profile_image || 'https://placehold.co/200x200?text=LOGO';
         const escapeAttr = (value) => String(value ?? '')
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
@@ -119,7 +120,7 @@ const SettingsManager = {
                             
                             <div style="margin-top:2rem; padding:1.5rem; text-align:center; background:var(--bg-main); border-radius:16px;">
                                 <div style="position:relative; width:90px; height:90px; margin:0 auto 1rem; border-radius:12px; border:2px dashed var(--border); background:white; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="SettingsManager.showCompanyLogoModal()">
-                                    <img id="settings-company-logo" src="assets/logo.png" alt="Company logo" onerror="this.src='https://placehold.co/200x200?text=LOGO'" style="max-width:80%; max-height:80%; object-fit:contain;">
+                                    <img id="settings-company-logo" src="${logoSrc}" alt="Company logo" onerror="this.src='https://placehold.co/200x200?text=LOGO'" style="max-width:80%; max-height:80%; object-fit:contain;">
                                     <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); border-radius:10px; color:white; display:flex; align-items:center; justify-content:center; opacity:0; transition:0.3s;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
                                         <i class="fas fa-camera"></i>
                                     </div>
@@ -556,6 +557,28 @@ const SettingsManager = {
                 business_phone: businessPhone,
                 business_email: businessEmail
             });
+            const currentUser = await AuthManager.resolveCurrentUser();
+            if (currentUser?.id) {
+                const updatedProfile = await ApiClient.updateProfile(currentUser.id, {
+                    business_name: cafeName,
+                    owner_name: currentUser.owner_name || currentUser.username || cafeName,
+                    mobile: businessPhone,
+                    email: businessEmail,
+                    address: businessAddress
+                });
+                const mergedUser = {
+                    ...currentUser,
+                    ...(updatedProfile || {}),
+                    business_name: cafeName,
+                    mobile: businessPhone,
+                    email: businessEmail,
+                    address: businessAddress,
+                    name: cafeName
+                };
+                sessionStorage.setItem(AuthManager.storageKey('user'), JSON.stringify(mergedUser));
+                sessionStorage.setItem(AuthManager.storageKey('username'), mergedUser.username || currentUser.username || '');
+                AuthManager.updateSidebarUser(mergedUser);
+            }
             SettingsManager.currentSettings = updated || await SettingsManager.loadBackendSettings(true);
             StorageManager.save('cafe_name', cafeName);
             StorageManager.save('business_address', businessAddress);
@@ -662,21 +685,26 @@ const SettingsManager = {
         window.SyncStatus.show('Uploading logo...', 'saving');
 
         try {
-            // Simulate Upload Delay
-            await new Promise(r => setTimeout(r, 1500));
-
-            // In a real app we'd call ApiClient.uploadLogo(file)
-            window.showAlert('Company Logo updated successfully!');
-            ModalManager.hide();
-
-            // Temporary UI Update
-            const logoEl = document.getElementById('settings-company-logo');
-            if (logoEl) {
-                const reader = new FileReader();
-                reader.onload = (e) => logoEl.src = e.target.result;
-                reader.readAsDataURL(file);
+            const currentUser = await AuthManager.resolveCurrentUser();
+            if (!currentUser?.id) {
+                throw new Error('Logged-in user not found');
             }
 
+            const result = await ApiClient.uploadProfileImage(currentUser.id, file);
+            const updatedUser = {
+                ...currentUser,
+                profile_image: result?.profile_image || currentUser.profile_image
+            };
+            sessionStorage.setItem(AuthManager.storageKey('user'), JSON.stringify(updatedUser));
+            AuthManager.updateSidebarUser(updatedUser);
+
+            const logoEl = document.getElementById('settings-company-logo');
+            if (logoEl) {
+                logoEl.src = updatedUser.profile_image;
+            }
+
+            window.showAlert('Company Logo updated successfully!');
+            ModalManager.hide();
             window.SyncStatus.show('Logo updated', 'success', 3000);
         } catch (error) {
             window.SyncStatus.show('Upload failed', 'error', 3000);

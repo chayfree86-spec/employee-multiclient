@@ -162,6 +162,13 @@ const ApiClient = {
         return this.request(`/profile?${query.toString()}`);
     },
 
+    updateProfile(id, data) {
+        return this.request(`/profile/update/${encodeURIComponent(id)}`, {
+            method: 'POST',
+            body: data
+        });
+    },
+
     getDashboard() {
         return this.request('/dashboard');
     },

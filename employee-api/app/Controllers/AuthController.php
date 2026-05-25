@@ -30,6 +30,11 @@ class AuthController extends BaseApiController
             return $this->respondError('Invalid credentials', 401);
         }
 
+        if (!empty($user['created_at']) && strtotime((string) $user['created_at']) <= strtotime('-365 days')) {
+            $model->update($user['id'], ['status' => 'inactive']);
+            return $this->respondError('Account has expired after 365 days', 403);
+        }
+
         if (($user['status'] ?? '') !== 'active') {
             return $this->respondError('Account is inactive', 403);
         }

@@ -38,11 +38,24 @@ class ProfileController extends BaseApiController
 
         // Remove blank values so they don't overwrite existing data
         $data = $this->filterBlankValues($data);
+        $data = array_intersect_key($data, array_flip([
+            'username',
+            'email',
+            'mobile',
+            'owner_name',
+            'business_name',
+            'address',
+            'profile_image',
+        ]));
 
         if (empty($data)) return $this->respondError('No valid data provided');
 
-        if ($model->update($userId, $data)) {
-            return $this->respondSuccess($data, 'Profile updated successfully');
+        $data['updated_at'] = date('Y-m-d H:i:s');
+
+        if ($model->builder()->where('id', $userId)->update($data)) {
+            $user = $model->find($userId);
+            unset($user['password']);
+            return $this->respondSuccess($user, 'Profile updated successfully');
         }
 
         return $this->respondError('Update failed', 400, $model->errors());
