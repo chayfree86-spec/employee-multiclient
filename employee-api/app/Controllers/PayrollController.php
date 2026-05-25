@@ -11,6 +11,9 @@ class PayrollController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new PayrollModel();
         $employeeId = $this->request->getGet('employee_id');
         $month = $this->request->getGet('month');
@@ -22,6 +25,8 @@ class PayrollController extends BaseApiController
             : 'NULL as profile_image';
         $builder->select('payroll.*, employees.name as employee_name, employees.mobile as employee_mobile, ' . $profileImageSelect);
         $builder->join('employees', 'employees.id = payroll.employee_id');
+        $builder->where('payroll.user_id', $userId);
+        $builder->where('employees.user_id', $userId);
 
         if ($employeeId && $employeeId != -1) {
             $builder->where('payroll.employee_id', $employeeId);
@@ -55,8 +60,11 @@ class PayrollController extends BaseApiController
      */
     public function show($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new PayrollModel();
-        $slip = $model->find($id);
+        $slip = $model->where('user_id', $userId)->find($id);
 
         if (!$slip) {
             return $this->respondError('Payroll record not found', 404);
@@ -70,6 +78,9 @@ class PayrollController extends BaseApiController
      */
     public function summary()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $employeeId = $this->request->getGet('employee_id');
         $month = $this->request->getGet('month') ?? date('m');
         $year = $this->request->getGet('year') ?? date('Y');
@@ -79,16 +90,19 @@ class PayrollController extends BaseApiController
         if (!$employeeId) {
             return $this->respondError('Employee ID is required');
         }
+        if (!$this->employeeBelongsToUser((int) $employeeId, $userId)) {
+            return $this->respondError('Employee not found', 404);
+        }
 
         $model = new PayrollModel();
         
         // Check if payroll already exists
-        $existing = $model->getPayrollByEmployeeAndMonth($employeeId, $month, $year);
+        $existing = $model->where('user_id', $userId)->where('employee_id', $employeeId)->where('month', $month)->where('year', $year)->first();
         
         $aofModel = new \EmployeeApi\Models\AdvanceOvertimeFineModel();
         $sums = $aofModel->getSumsForEmployeeMonth((int)$employeeId, (int)$month, (int)$year);
         $employeeModel = new \EmployeeApi\Models\EmployeeModel();
-        $employee = $employeeModel->find((int)$employeeId);
+        $employee = $employeeModel->where('user_id', $userId)->find((int)$employeeId);
         
         // Get estimated earnings from calculateSalary
         $estimated = $model->calculateSalary($employeeId, $month, $year, $sums['overtime'], $sums['fine'], 0, $sums['deduction']);
@@ -141,6 +155,7 @@ class PayrollController extends BaseApiController
         $finalSalary = max(0, round($beforeAdvance - $selectedAdvanceDeduction, 0));
         $deductionEntries = $aofModel->select('id, date, type, amount, notes')
             ->where('employee_id', (int)$employeeId)
+            ->where('user_id', $userId)
             ->whereIn('type', [
                 \EmployeeApi\Models\AdvanceOvertimeFineModel::TYPE_FINE,
                 \EmployeeApi\Models\AdvanceOvertimeFineModel::TYPE_DEDUCTION,
@@ -254,6 +269,9 @@ class PayrollController extends BaseApiController
      */
     public function generate()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $data = $this->request->getJSON(true);
         $employeeId = $data['employee_id'] ?? null;
         $month = $data['month'] ?? date('n');
@@ -269,9 +287,9 @@ class PayrollController extends BaseApiController
         // Check if we are doing bulk generation
         $employeesToProcess = [];
         if (!$employeeId || $employeeId == -1) {
-            $employeesToProcess = $employeeModel->where('status', 'active')->findAll();
+            $employeesToProcess = $employeeModel->where('user_id', $userId)->where('status', 'active')->findAll();
         } else {
-            $emp = $employeeModel->find($employeeId);
+            $emp = $employeeModel->where('user_id', $userId)->find($employeeId);
             if ($emp) {
                 $employeesToProcess[] = $emp;
             }
@@ -292,7 +310,7 @@ class PayrollController extends BaseApiController
             $currEmpId = $emp['id'];
             
             // Check if already exists
-            $existing = $model->getPayrollByEmployeeAndMonth($currEmpId, $month, $year);
+            $existing = $model->where('user_id', $userId)->where('employee_id', $currEmpId)->where('month', $month)->where('year', $year)->first();
             if ($existing) {
                 $countSkipped++;
                 continue;
@@ -328,6 +346,7 @@ class PayrollController extends BaseApiController
             $payrollData['advance_deduction'] = $deductionToUse;
             $payrollData['total_salary'] = max(0, round($beforeAdvance - $deductionToUse, 0));
             $payrollData['paid'] = 1;
+            $payrollData['user_id'] = $userId;
             
             // Insert
             $payrollId = $model->insert($payrollData);
@@ -336,6 +355,7 @@ class PayrollController extends BaseApiController
                 // Record advance payment if applied
                 if ($deductionToUse > 0) {
                     $aofModel->insert([
+                        'user_id' => $userId,
                         'employee_id' => $currEmpId,
                         'date' => $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01',
                         'type' => 'advance_paid',
@@ -366,16 +386,23 @@ class PayrollController extends BaseApiController
      */
     public function delete($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $id = (int)$id;
         $model = new PayrollModel();
         $aofModel = new \EmployeeApi\Models\AdvanceOvertimeFineModel();
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
 
+        if (!$model->where('user_id', $userId)->find($id)) {
+            return $this->respondError('Payroll record not found', 404);
+        }
+
         // 1. Delete associated advance payment records
-        $aofModel->where('notes', 'payroll_id:' . $id)->delete();
+        $aofModel->where('user_id', $userId)->where('notes', 'payroll_id:' . $id)->delete();
 
         // 2. Delete associated hold salary records
-        $holdModel->where('payroll_id', $id)->delete();
+        $holdModel->where('user_id', $userId)->where('payroll_id', $id)->delete();
 
         // 3. Delete the payroll record itself
         if ($model->delete($id)) {
@@ -389,6 +416,9 @@ class PayrollController extends BaseApiController
      */
     public function deleteAll()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $month = $this->request->getGet('month');
         $year = $this->request->getGet('year');
 
@@ -402,30 +432,38 @@ class PayrollController extends BaseApiController
 
         // Get all payroll IDs for this month/year before deleting them
         $payrolls = $model->where('month', (int)$month)
+                          ->where('user_id', $userId)
                           ->where('year', (int)$year)
                           ->findAll();
 
         foreach ($payrolls as $p) {
             $pId = $p['id'];
-            $aofModel->where('notes', 'payroll_id:' . $pId)->delete();
-            $holdModel->where('payroll_id', $pId)->delete();
+            $aofModel->where('user_id', $userId)->where('notes', 'payroll_id:' . $pId)->delete();
+            $holdModel->where('user_id', $userId)->where('payroll_id', $pId)->delete();
         }
 
         // Delete all payroll records for the selected month/year
-        $model->where('month', (int)$month)->where('year', (int)$year)->delete();
+        $model->where('user_id', $userId)->where('month', (int)$month)->where('year', (int)$year)->delete();
 
         return $this->respondSuccess(null, 'All payroll records and associated data for the selected month have been deleted');
     }
 
     public function holdHistory($employeeId)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+        if (!$this->employeeBelongsToUser((int) $employeeId, $userId)) return $this->respondError('Employee not found', 404);
+
         $model = new \EmployeeApi\Models\HoldSalaryModel();
-        $history = $model->where('employee_id', (int)$employeeId)->orderBy('created_at', 'DESC')->findAll();
+        $history = $model->where('user_id', $userId)->where('employee_id', (int)$employeeId)->orderBy('created_at', 'DESC')->findAll();
         return $this->respondSuccess($history, 'Hold history retrieved');
     }
 
     public function addManualHold()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $data = $this->request->getJSON(true);
         if (!is_array($data)) {
             $data = $this->request->getPost();
@@ -441,7 +479,7 @@ class PayrollController extends BaseApiController
 
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
         $employeeModel = new \EmployeeApi\Models\EmployeeModel();
-        $employee = $employeeModel->find($employeeId);
+        $employee = $employeeModel->where('user_id', $userId)->find($employeeId);
         
         if (!$employee) {
             return $this->respondError('Employee not found');
@@ -454,7 +492,7 @@ class PayrollController extends BaseApiController
             $days = $amount / $dailyRate;
         }
         
-        $success = $holdModel->addToHold((int)$employeeId, $days, $dailyRate);
+        $success = $holdModel->addToHold((int)$employeeId, $days, $dailyRate, null, $userId);
         
         if ($success) {
             return $this->respondSuccess(null, 'Manual hold added successfully');
@@ -464,6 +502,9 @@ class PayrollController extends BaseApiController
 
     public function releaseManualHold()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $data = $this->request->getJSON(true);
         if (!is_array($data)) {
             $data = $this->request->getPost();
@@ -474,6 +515,9 @@ class PayrollController extends BaseApiController
 
         if (!$employeeId) {
             return $this->respondError('Employee ID is required');
+        }
+        if (!$this->employeeBelongsToUser((int) $employeeId, $userId)) {
+            return $this->respondError('Employee not found', 404);
         }
 
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();

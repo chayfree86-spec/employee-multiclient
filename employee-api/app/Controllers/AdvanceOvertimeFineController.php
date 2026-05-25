@@ -11,11 +11,14 @@ class AdvanceOvertimeFineController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AdvanceOvertimeFineModel();
         $employee_id = $this->request->getGet('employee_id');
         $type = $this->request->getGet('type'); // advance, overtime, fine
 
-        $query = $model;
+        $query = $model->where('user_id', $userId);
         if ($employee_id) $query = $query->where('employee_id', $employee_id);
         if ($type) $query = $query->where('type', $type);
 
@@ -28,8 +31,15 @@ class AdvanceOvertimeFineController extends BaseApiController
      */
     public function create()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AdvanceOvertimeFineModel();
         $data = $this->request->getJSON(true) ?? $this->request->getPost();
+        if (!$this->employeeBelongsToUser((int) ($data['employee_id'] ?? 0), $userId)) {
+            return $this->respondError('Employee not found', 404);
+        }
+        $data['user_id'] = $userId;
         $balanceError = $this->validateMovementBalances($model, $data);
 
         if ($balanceError !== null) {
@@ -49,7 +59,13 @@ class AdvanceOvertimeFineController extends BaseApiController
      */
     public function delete($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AdvanceOvertimeFineModel();
+        if (!$model->where('user_id', $userId)->find($id)) {
+            return $this->respondError('Record not found', 404);
+        }
         if ($model->delete($id)) {
             return $this->respondSuccess(null, 'Record deleted');
         }
@@ -61,6 +77,9 @@ class AdvanceOvertimeFineController extends BaseApiController
      */
     public function update($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AdvanceOvertimeFineModel();
         $data = $this->request->getJSON(true) ?? $this->request->getPost();
 
@@ -71,9 +90,12 @@ class AdvanceOvertimeFineController extends BaseApiController
             return $this->respondError('No valid data provided');
         }
 
-        $existing = $model->find($id);
+        $existing = $model->where('user_id', $userId)->find($id);
         if (!$existing) {
             return $this->respondError('Record not found', 404);
+        }
+        if (isset($data['employee_id']) && !$this->employeeBelongsToUser((int) $data['employee_id'], $userId)) {
+            return $this->respondError('Employee not found', 404);
         }
 
         $merged = array_merge($existing, $data);
@@ -95,9 +117,16 @@ class AdvanceOvertimeFineController extends BaseApiController
      */
     public function summary()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $employeeId = $this->request->getGet('employee_id');
         if (!$employeeId) {
             return $this->respondError('Employee ID is required');
+        }
+
+        if (!$this->employeeBelongsToUser((int) $employeeId, $userId)) {
+            return $this->respondError('Employee not found', 404);
         }
 
         $model = new AdvanceOvertimeFineModel();
@@ -108,6 +137,9 @@ class AdvanceOvertimeFineController extends BaseApiController
 
     public function transfer()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AdvanceOvertimeFineModel();
         $data = $this->request->getJSON(true) ?? $this->request->getPost();
 
@@ -119,6 +151,9 @@ class AdvanceOvertimeFineController extends BaseApiController
 
         if ($employeeId <= 0 || $amount <= 0 || $date === '' || $direction === '') {
             return $this->respondError('Employee, date, direction and positive amount are required');
+        }
+        if (!$this->employeeBelongsToUser($employeeId, $userId)) {
+            return $this->respondError('Employee not found', 404);
         }
 
         if (!in_array($direction, ['loan_to_saving', 'saving_to_loan'], true)) {
@@ -147,6 +182,7 @@ class AdvanceOvertimeFineController extends BaseApiController
             : AdvanceOvertimeFineModel::TYPE_TRANSFER_SAVING_TO_LOAN;
 
         $payload = [
+            'user_id' => $userId,
             'employee_id' => $employeeId,
             'date' => $date,
             'type' => $type,

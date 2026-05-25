@@ -11,17 +11,11 @@ class ProfileController extends BaseApiController
      */
     public function index()
     {
-        $model = new UserModel();
-        $userId = $this->request->getGet('id'); // In production, get from JWT token
-        $username = $this->request->getGet('username');
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
 
-        if ($userId) {
-            $user = $model->find($userId);
-        } elseif ($username) {
-            $user = $model->where('username', $username)->first();
-        } else {
-            return $this->respondError('User ID or username required');
-        }
+        $model = new UserModel();
+        $user = $model->find($userId);
 
         if (!$user) return $this->respondError('User not found', 404);
 
@@ -34,6 +28,9 @@ class ProfileController extends BaseApiController
      */
     public function update($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new UserModel();
         $data = $this->request->getJSON(true);
 
@@ -44,7 +41,7 @@ class ProfileController extends BaseApiController
 
         if (empty($data)) return $this->respondError('No valid data provided');
 
-        if ($model->update($id, $data)) {
+        if ($model->update($userId, $data)) {
             return $this->respondSuccess($data, 'Profile updated successfully');
         }
 
@@ -56,19 +53,20 @@ class ProfileController extends BaseApiController
      */
     public function changePassword()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new UserModel();
         $json = $this->request->getJSON();
         
-        $username = $json->username ?? null;
         $currentPass = $json->current_password ?? null;
         $newPass = $json->new_password ?? null;
 
-        if (!$username || !$newPass) {
-            return $this->respondError('Missing username or new password');
+        if (!$newPass) {
+            return $this->respondError('Missing new password');
         }
 
-        // Find user
-        $user = $model->where('username', $username)->first();
+        $user = $model->find($userId);
         if (!$user) {
             return $this->respondError('User not found');
         }
@@ -94,8 +92,8 @@ class ProfileController extends BaseApiController
      */
     public function uploadImage()
     {
-        $userId = $this->request->getPost('id');
-        if (!$userId) return $this->respondError('User ID required');
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
 
         $img = $this->request->getFile('profile_image');
 

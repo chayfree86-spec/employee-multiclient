@@ -18,7 +18,7 @@ class AdvanceOvertimeFineModel extends Model
 
     protected $table = 'advance_overtime_fine';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['employee_id', 'date', 'type', 'amount', 'repay_months', 'notes'];
+    protected $allowedFields = ['user_id', 'employee_id', 'date', 'type', 'amount', 'repay_months', 'notes'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = '';

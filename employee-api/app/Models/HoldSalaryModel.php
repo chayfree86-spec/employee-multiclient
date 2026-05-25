@@ -9,7 +9,7 @@ class HoldSalaryModel extends Model
     protected $table = 'hold_salary';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'employee_id', 'initial_hold_days', 'remaining_hold_days',
+        'user_id', 'employee_id', 'initial_hold_days', 'remaining_hold_days',
         'daily_rate', 'payroll_id', 'total', 'status'
     ];
     protected $useTimestamps = true;
@@ -33,7 +33,7 @@ class HoldSalaryModel extends Model
     public const MIN_WORKING_DAYS_PER_MONTH = 10;
     public const STATUS_ACTIVE = 'active';
 
-    public function addToHold(int $employeeId, float $daysToAdd, float $dailyRateForNewDays, ?int $payrollId = null): bool
+    public function addToHold(int $employeeId, float $daysToAdd, float $dailyRateForNewDays, ?int $payrollId = null, ?int $userId = null): bool
     {
         if ($daysToAdd <= 0) {
             return true;
@@ -48,6 +48,9 @@ class HoldSalaryModel extends Model
             'total' => $total,
             'status' => self::STATUS_ACTIVE,
         ];
+        if ($userId !== null) {
+            $data['user_id'] = $userId;
+        }
         if ($payrollId !== null) {
             $data['payroll_id'] = $payrollId;
         }

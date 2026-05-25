@@ -9,7 +9,7 @@ class PayrollModel extends Model
     protected $table = 'payroll';
     protected $primaryKey = 'id';
     protected $allowedFields = [
-        'employee_id', 'month', 'year', 'total_days', 'present_days',
+        'user_id', 'employee_id', 'month', 'year', 'total_days', 'present_days',
         'half_days', 'absent_days', 'weekend_holiday_days', 'weekend_absent_days', 'weekend_holiday_amount',
         'base_salary', 'overtime', 'fine', 'deduction',
         'advance_deduction', 'hold_salary_released', 'hold_deduction', 'total_salary', 'paid',
@@ -127,17 +127,31 @@ class PayrollModel extends Model
         return (float) ($row['advance_deduction'] ?? 0);
     }
 
-    public function getTotalPaidAmount()
+    public function getTotalPaidAmount(?int $userId = null)
     {
-        $row = $this->selectSum('total_salary')->where('paid', 1)->first();
+        $builder = $this->selectSum('total_salary')->where('paid', 1);
+        if ($userId !== null) {
+            $builder->where('user_id', $userId);
+        }
+        $row = $builder->first();
         return (float)($row['total_salary'] ?? 0);
     }
 
-    public function getTotalAdvancePending()
+    public function getTotalAdvancePending(?int $userId = null)
     {
         $aofModel = new AdvanceOvertimeFineModel();
-        $totalGiven = $aofModel->selectSum('amount')->where('type', 'advance')->first();
-        $totalRepaid = $aofModel->selectSum('amount')->where('type', 'advance_paid')->first();
+        $givenQuery = $aofModel->selectSum('amount')->where('type', 'advance');
+        if ($userId !== null) {
+            $givenQuery->where('user_id', $userId);
+        }
+        $totalGiven = $givenQuery->first();
+
+        $paidModel = new AdvanceOvertimeFineModel();
+        $paidQuery = $paidModel->selectSum('amount')->where('type', 'advance_paid');
+        if ($userId !== null) {
+            $paidQuery->where('user_id', $userId);
+        }
+        $totalRepaid = $paidQuery->first();
         return max(0, (float)($totalGiven['amount'] ?? 0) - (float)($totalRepaid['amount'] ?? 0));
     }
 }

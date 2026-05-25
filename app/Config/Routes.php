@@ -27,6 +27,12 @@ $routes->group('api/v1', ['namespace' => 'EmployeeApi\Controllers'], static func
     $routes->get('logout', 'AuthController::logout');
     $routes->post('forgot-password', 'AuthController::forgotPassword');
 
+    $routes->post('superadmin/login', 'SuperadminController::login');
+    $routes->get('superadmin/users', 'SuperadminController::users');
+    $routes->post('superadmin/users', 'SuperadminController::createUser');
+    $routes->put('superadmin/users/(:num)', 'SuperadminController::updateUser/$1');
+    $routes->delete('superadmin/users/(:num)', 'SuperadminController::deleteUser/$1');
+
     $routes->resource('employees', ['controller' => 'EmployeeController']);
     $routes->post('employees/(:num)/upload-image', 'EmployeeController::uploadImage/$1');
 
@@ -66,8 +72,14 @@ $routes->group('api/v1', ['namespace' => 'EmployeeApi\Controllers'], static func
     $routes->post('change-password', 'ProfileController::changePassword');
 });
 
+// Main UI: serve the static employee admin design. Legacy CI views/controllers
+// remain available behind their specific routes so API/data functionality stays intact.
+$routes->get('/', static fn () => redirect()->to('/emoloyee-admin/index.html'));
+$routes->get('/dashboard', static fn () => redirect()->to('/emoloyee-admin/index.html'));
+$routes->get('/superadmin', static fn () => redirect()->to('/superadmin/index.html'));
+
 // Auth routes
-$routes->get('/login', 'Auth::login');
+$routes->get('/login', static fn () => redirect()->to('/emoloyee-admin/index.html'));
 $routes->post('/login', 'Auth::login');
 $routes->get('/logout', 'Auth::logout');
 
@@ -75,10 +87,6 @@ $routes->get('/logout', 'Auth::logout');
 $routes->get('/profile', 'Profile::index');
 $routes->post('/profile/update', 'Profile::update');
 $routes->post('/profile/change-password', 'Profile::changePassword');
-
-// Dashboard
-$routes->get('/', 'Dashboard::index');
-$routes->get('/dashboard', 'Dashboard::index'); // Explicit dashboard route
 
 // Employee routes
 $routes->get('/employee', 'Employee::index');

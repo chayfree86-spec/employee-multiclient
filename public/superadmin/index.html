@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin - Employee Multiclient</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --ink:#14120f; --muted:#70685f; --line:#e7e0d8; --brand:#0b7c3d; --danger:#d63031; --panel:#fff; --bg:#f7f4ef; }
+        * { box-sizing:border-box; }
+        body { margin:0; font-family:Inter, sans-serif; background:var(--bg); color:var(--ink); }
+        .shell { min-height:100vh; display:grid; grid-template-columns:260px 1fr; }
+        aside { background:#342b25; color:#fff; padding:24px; }
+        .brand { font-size:20px; font-weight:800; display:flex; gap:10px; align-items:center; }
+        .brand i { color:#c8a97e; }
+        main { padding:28px; }
+        .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; gap:16px; }
+        h1 { margin:0; font-size:28px; }
+        .muted { color:var(--muted); font-size:14px; }
+        .card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 10px 24px rgba(35,25,16,.05); }
+        .login { max-width:420px; margin:8vh auto; }
+        label { display:block; font-weight:700; font-size:13px; margin:14px 0 6px; }
+        input, select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
+        button { border:0; border-radius:12px; padding:11px 14px; font-weight:800; cursor:pointer; font:inherit; }
+        .primary { background:var(--brand); color:#fff; }
+        .ghost { background:#f0ece7; color:var(--ink); }
+        .danger { background:rgba(214,48,49,.1); color:var(--danger); }
+        .toolbar { display:flex; gap:10px; align-items:center; }
+        table { width:100%; border-collapse:collapse; }
+        th, td { padding:12px 10px; border-bottom:1px solid var(--line); text-align:left; font-size:14px; }
+        th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+        .status { display:inline-flex; padding:5px 9px; border-radius:999px; font-weight:800; font-size:12px; }
+        .active { color:#08753a; background:#dff7ea; }
+        .inactive { color:#9b2525; background:#fde2e2; }
+        .hidden { display:none !important; }
+        .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        dialog { border:0; border-radius:18px; padding:0; width:min(620px, calc(100vw - 24px)); }
+        dialog::backdrop { background:rgba(0,0,0,.35); }
+        @media (max-width:760px) { .shell { grid-template-columns:1fr; } aside { display:none; } main { padding:16px; } .grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <section id="login" class="login card">
+        <h1>Superadmin Login</h1>
+        <p class="muted">Manage business users and access status.</p>
+        <label>Mobile</label>
+        <input id="login-mobile" value="9628717175" inputmode="numeric">
+        <label>Password</label>
+        <input id="login-password" type="password" value="123456">
+        <button class="primary" style="width:100%; margin-top:18px;" onclick="login()">Login</button>
+    </section>
+
+    <section id="app" class="shell hidden">
+        <aside>
+            <div class="brand"><i class="fas fa-shield-halved"></i> Superadmin</div>
+            <p class="muted" style="color:#cfc5bc;">Employee Multiclient</p>
+        </aside>
+        <main>
+            <div class="top">
+                <div>
+                    <h1>Users</h1>
+                    <p class="muted">Create, edit, delete, activate or deactivate business users.</p>
+                </div>
+                <div class="toolbar">
+                    <button class="ghost" onclick="loadUsers()"><i class="fas fa-rotate"></i></button>
+                    <button class="primary" onclick="openUserModal()"><i class="fas fa-plus"></i> New User</button>
+                    <button class="ghost" onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="card">
+                <table>
+                    <thead><tr><th>User</th><th>Mobile</th><th>Email</th><th>Staff</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+            </div>
+        </main>
+    </section>
+
+    <dialog id="user-dialog">
+        <div class="card">
+            <h2 id="dialog-title">New User</h2>
+            <input id="user-id" type="hidden">
+            <div class="grid">
+                <div><label>Business/User Name</label><input id="username"></div>
+                <div><label>Owner Name</label><input id="owner_name"></div>
+                <div><label>Mobile</label><input id="mobile" inputmode="numeric"></div>
+                <div><label>Email</label><input id="email" type="email"></div>
+                <div><label>Password</label><input id="password" type="password" placeholder="Leave blank while editing"></div>
+                <div><label>Status</label><select id="status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                <div style="grid-column:1/-1;"><label>Address</label><input id="address"></div>
+            </div>
+            <div class="toolbar" style="justify-content:flex-end; margin-top:18px;">
+                <button class="ghost" onclick="closeUserModal()">Cancel</button>
+                <button class="primary" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        const api = '/api/v1';
+        const tokenKey = 'employee_superadmin_token';
+        let users = [];
+
+        function headers() {
+            const token = sessionStorage.getItem(tokenKey);
+            return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+        }
+
+        async function request(path, options = {}) {
+            const response = await fetch(`${api}${path}`, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
+            const payload = await response.json();
+            if (!response.ok || payload.status === false) throw new Error(payload.message || 'Request failed');
+            return payload.data;
+        }
+
+        async function login() {
+            try {
+                const data = await request('/superadmin/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ mobile: document.getElementById('login-mobile').value, password: document.getElementById('login-password').value })
+                });
+                sessionStorage.setItem(tokenKey, data.token);
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                await loadUsers();
+            } catch (error) { alert(error.message); }
+        }
+
+        async function loadUsers() {
+            users = await request('/superadmin/users');
+            document.getElementById('users-body').innerHTML = users.map((user) => `
+                <tr>
+                    <td><strong>${escapeHtml(user.business_name || user.username)}</strong><div class="muted">${escapeHtml(user.owner_name || user.username || '')}</div></td>
+                    <td>${escapeHtml(user.mobile || '')}</td>
+                    <td>${escapeHtml(user.email || '')}</td>
+                    <td>${user.employee_count || 0}</td>
+                    <td><span class="status ${user.status}">${String(user.status || '').toUpperCase()}</span></td>
+                    <td class="toolbar">
+                        <button class="ghost" onclick="openUserModal(${user.id})"><i class="fas fa-pen"></i></button>
+                        <button class="${user.status === 'active' ? 'danger' : 'ghost'}" onclick="toggleUser(${user.id})">${user.status === 'active' ? 'Deactivate' : 'Activate'}</button>
+                        ${Number(user.id) === 1 ? '' : `<button class="danger" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>`}
+                    </td>
+                </tr>`).join('');
+        }
+
+        function openUserModal(id = null) {
+            const user = users.find((item) => Number(item.id) === Number(id)) || {};
+            document.getElementById('dialog-title').textContent = id ? 'Edit User' : 'New User';
+            for (const key of ['user-id','username','owner_name','mobile','email','password','status','address']) {
+                const el = document.getElementById(key);
+                const field = key === 'user-id' ? 'id' : key;
+                el.value = key === 'password' ? '' : (user[field] || (key === 'status' ? 'active' : ''));
+            }
+            document.getElementById('user-dialog').showModal();
+        }
+
+        function closeUserModal() { document.getElementById('user-dialog').close(); }
+
+        async function saveUser() {
+            const id = document.getElementById('user-id').value;
+            const body = {};
+            for (const key of ['username','owner_name','mobile','email','password','status','address']) {
+                const value = document.getElementById(key).value.trim();
+                if (value) body[key] = value;
+            }
+            await request(id ? `/superadmin/users/${id}` : '/superadmin/users', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
+            closeUserModal();
+            await loadUsers();
+        }
+
+        async function toggleUser(id) {
+            const user = users.find((item) => Number(item.id) === Number(id));
+            await request(`/superadmin/users/${id}`, { method: 'PUT', body: JSON.stringify({ status: user.status === 'active' ? 'inactive' : 'active' }) });
+            await loadUsers();
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Delete this user?')) return;
+            await request(`/superadmin/users/${id}`, { method: 'DELETE' });
+            await loadUsers();
+        }
+
+        function logout() { sessionStorage.removeItem(tokenKey); location.reload(); }
+        function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+
+        if (sessionStorage.getItem(tokenKey)) {
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            loadUsers().catch(() => logout());
+        }
+    </script>
+</body>
+</html>

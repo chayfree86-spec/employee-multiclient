@@ -15,6 +15,9 @@ class DashboardController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $employeeModel   = new EmployeeModel();
         $payrollModel    = new PayrollModel();
         $attendanceModel = new AttendanceModel();
@@ -24,9 +27,9 @@ class DashboardController extends BaseApiController
         $currentMonth = (int) date('n');
         $currentYear  = (int) date('Y');
         $today = date('Y-m-d');
-        $activeEmployees = $employeeModel->getActiveEmployees();
+        $activeEmployees = $employeeModel->where('user_id', $userId)->where('status', 'active')->findAll();
         $activeIds = array_map(static fn ($employee) => (int)($employee['id'] ?? 0), $activeEmployees);
-        $todayRows = $attendanceModel->where('date', $today)->findAll();
+        $todayRows = $attendanceModel->where('user_id', $userId)->where('date', $today)->findAll();
         $todayByEmployee = [];
         foreach ($todayRows as $row) {
             $todayByEmployee[(int)($row['employee_id'] ?? 0)] = $row;
@@ -49,6 +52,7 @@ class DashboardController extends BaseApiController
         $holdRow = $holdModel->select('COUNT(DISTINCT employee_id) as staff_count')
             ->selectSum('remaining_hold_days', 'days')
             ->selectSum('total', 'amount')
+            ->where('user_id', $userId)
             ->where('status', HoldSalaryModel::STATUS_ACTIVE)
             ->first();
 
@@ -61,34 +65,34 @@ class DashboardController extends BaseApiController
 
         $data = [
             'stats' => [
-                'totalEmployees'      => (int) $employeeModel->countAllResults(),
-                'activeEmployees'     => (int) $employeeModel->getTotalActiveEmployees(),
-                'deactiveEmployees'   => (int) $employeeModel->getTotalDeactiveEmployees(),
+                'totalEmployees'      => (int) (new EmployeeModel())->where('user_id', $userId)->countAllResults(),
+                'activeEmployees'     => (int) (new EmployeeModel())->where('user_id', $userId)->where('status', 'active')->countAllResults(),
+                'deactiveEmployees'   => (int) (new EmployeeModel())->where('user_id', $userId)->whereIn('status', ['deactive', 'inactive'])->countAllResults(),
                 'todayPresent'        => $todayPresent,
                 'todayAbsent'         => $todayAbsent,
                 'todayHalfDay'        => $todayHalfDay,
-                'totalPayoutDone'     => (float) $payrollModel->getTotalPaidAmount(),
-                'totalAdvancePending' => (float) $payrollModel->getTotalAdvancePending(),
+                'totalPayoutDone'     => (float) $payrollModel->getTotalPaidAmount($userId),
+                'totalAdvancePending' => (float) $payrollModel->getTotalAdvancePending($userId),
                 'advanceStaffCount'   => $advanceCount,
                 'heldSalaryAmount'    => (float)($holdRow['amount'] ?? 0),
                 'heldSalaryDays'      => (float)($holdRow['days'] ?? 0),
                 'holdStaffCount'      => (int)($holdRow['staff_count'] ?? 0),
-                'currentMonthPayable' => (float) $this->calculatePayable($employeeModel, $attendanceModel, $aofModel, $currentMonth, $currentYear),
-                'totalBaseSalary'     => (float) $employeeModel->getTotalSalarySum(),
+                'currentMonthPayable' => (float) $this->calculatePayable($userId, $employeeModel, $attendanceModel, $aofModel, $currentMonth, $currentYear),
+                'totalBaseSalary'     => (float) (((new EmployeeModel())->selectSum('monthly_salary')->where('user_id', $userId)->where('status', 'active')->first())['monthly_salary'] ?? 0),
             ],
             'staffOverview' => $this->getStaffOverview($activeEmployees, $todayByEmployee),
             'charts' => [
-                'attendanceHistory' => $this->getAttendanceData($attendanceModel, $employeeModel),
-                'payoutHistory'     => $this->getPayoutData($payrollModel),
+                'attendanceHistory' => $this->getAttendanceData($userId, $attendanceModel, $employeeModel),
+                'payoutHistory'     => $this->getPayoutData($userId, $payrollModel),
             ]
         ];
 
         return $this->respondSuccess($data, 'Dashboard data retrieved');
     }
 
-    private function calculatePayable($employeeModel, $attendanceModel, $aofModel, $month, $year)
+    private function calculatePayable($userId, $employeeModel, $attendanceModel, $aofModel, $month, $year)
     {
-        $employees = $employeeModel->findAll();
+        $employees = $employeeModel->where('user_id', $userId)->findAll();
         $total = 0.0;
         $settingsModel = new \EmployeeApi\Models\SettingsModel();
         $workingDays = $settingsModel->getDaysDivisor($month, $year);
@@ -150,13 +154,13 @@ class DashboardController extends BaseApiController
         return $rows;
     }
 
-    private function getAttendanceData($attendanceModel, $employeeModel)
+    private function getAttendanceData($userId, $attendanceModel, $employeeModel)
     {
         $history = [];
-        $activeCount = (int) $employeeModel->getTotalActiveEmployees();
+        $activeCount = (int) $employeeModel->where('user_id', $userId)->where('status', 'active')->countAllResults();
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days"));
-            $rows = $attendanceModel->where('date', $date)->findAll();
+            $rows = $attendanceModel->where('user_id', $userId)->where('date', $date)->findAll();
             $present = 0;
             $absent = 0;
             $halfDay = 0;
@@ -184,13 +188,13 @@ class DashboardController extends BaseApiController
         return $history;
     }
 
-    private function getPayoutData($payrollModel)
+    private function getPayoutData($userId, $payrollModel)
     {
         $data = [];
         for ($i = 5; $i >= 0; $i--) {
             $m = (int)date('n', strtotime("-$i months"));
             $y = (int)date('Y', strtotime("-$i months"));
-            $row = $payrollModel->selectSum('total_salary')->where(['month' => $m, 'year' => $y, 'paid' => 1])->get()->getRow();
+            $row = $payrollModel->selectSum('total_salary')->where(['user_id' => $userId, 'month' => $m, 'year' => $y, 'paid' => 1])->get()->getRow();
             $data[] = [
                 'label' => date('M Y', mktime(0, 0, 0, $m, 1, $y)),
                 'amount' => (float)($row->total_salary ?? 0)

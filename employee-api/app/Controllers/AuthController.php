@@ -12,18 +12,26 @@ class AuthController extends BaseApiController
     public function login()
     {
         $json = $this->request->getJSON();
-        $username = $json->username ?? $this->request->getPost('username');
+        $username = $json->username ?? $json->mobile ?? $this->request->getPost('username') ?? $this->request->getPost('mobile');
         $password = $json->password ?? $this->request->getPost('password');
 
         if (empty($username) || empty($password)) {
-            return $this->respondError('Username and password are required');
+            return $this->respondError('Mobile and password are required');
         }
 
         $model = new UserModel();
-        $user = $model->where('username', $username)->first();
+        $user = $model->groupStart()
+            ->where('mobile', $username)
+            ->orWhere('username', $username)
+            ->groupEnd()
+            ->first();
 
         if (!$user || !password_verify((string)$password, $user['password'])) {
             return $this->respondError('Invalid credentials', 401);
+        }
+
+        if (($user['status'] ?? '') !== 'active') {
+            return $this->respondError('Account is inactive', 403);
         }
 
         // Remove password from response
@@ -31,7 +39,7 @@ class AuthController extends BaseApiController
 
         return $this->respondSuccess([
             'user' => $user,
-            'token' => base64_encode($user['username'] . ':' . time()) // Placeholder token
+            'token' => $this->makeAuthToken('user', (int) $user['id'], $user['username'] ?? $user['mobile'])
         ], 'Login successful');
     }
 

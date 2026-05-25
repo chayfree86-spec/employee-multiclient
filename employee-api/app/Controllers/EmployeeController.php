@@ -11,12 +11,15 @@ class EmployeeController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new EmployeeModel();
         $attendanceModel = new \EmployeeApi\Models\AttendanceModel();
         $payrollModel = new \EmployeeApi\Models\PayrollModel();
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
         
-        $employees = $model->findAll();
+        $employees = $model->where('user_id', $userId)->findAll();
         
         $month = (int) date('n');
         $year = (int) date('Y');
@@ -85,8 +88,11 @@ class EmployeeController extends BaseApiController
      */
     public function show($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new EmployeeModel();
-        $employee = $model->find($id);
+        $employee = $model->where('user_id', $userId)->find($id);
 
         if (!$employee) {
             return $this->respondError('Employee not found', 404);
@@ -105,6 +111,9 @@ class EmployeeController extends BaseApiController
      */
     public function create()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new EmployeeModel();
         $this->ensureEmployeeColumns($model);
         $data = $this->request->getJSON(true) ?? $this->request->getPost();
@@ -114,6 +123,7 @@ class EmployeeController extends BaseApiController
         }
 
         $data = $this->normalizeEmployeePayload($data);
+        $data['user_id'] = $userId;
 
         // Remove blank values so empty fields don't get stored
         $data = $this->filterBlankValues($data);
@@ -138,11 +148,14 @@ class EmployeeController extends BaseApiController
      */
     public function update($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new EmployeeModel();
         $this->ensureEmployeeColumns($model);
         $data = $this->request->getJSON(true) ?? $this->request->getRawInput();
 
-        if (!$model->find($id)) {
+        if (!$model->where('user_id', $userId)->find($id)) {
             return $this->respondError('Employee not found', 404);
         }
 
@@ -155,7 +168,9 @@ class EmployeeController extends BaseApiController
             return $this->respondError('No valid data provided');
         }
 
+        $data['user_id'] = $userId;
         $duplicate = $this->findDuplicateEmployee($model, $data, $id);
+        unset($data['user_id']);
         if ($duplicate) {
             return $this->respondError('Another staff already exists with the same name and mobile number', 409, [
                 'employee_id' => $duplicate['id'] ?? null,
@@ -175,9 +190,12 @@ class EmployeeController extends BaseApiController
      */
     public function delete($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new EmployeeModel();
 
-        if (!$model->find($id)) {
+        if (!$model->where('user_id', $userId)->find($id)) {
             return $this->respondError('Employee not found', 404);
         }
 
@@ -193,10 +211,13 @@ class EmployeeController extends BaseApiController
      */
     public function uploadImage($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         if (!$id) return $this->respondError('Employee ID required');
 
         $model = new EmployeeModel();
-        if (!$model->find($id)) {
+        if (!$model->where('user_id', $userId)->find($id)) {
             return $this->respondError('Employee not found', 404);
         }
 
@@ -261,7 +282,7 @@ class EmployeeController extends BaseApiController
             return null;
         }
 
-        $matches = $model->where('mobile', $mobile)->findAll();
+        $matches = $model->where('user_id', $data['user_id'] ?? 0)->where('mobile', $mobile)->findAll();
         foreach ($matches as $employee) {
             if ($excludeId !== null && (string) ($employee['id'] ?? '') === (string) $excludeId) {
                 continue;

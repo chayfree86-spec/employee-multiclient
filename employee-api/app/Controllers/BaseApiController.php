@@ -18,6 +18,78 @@ class BaseApiController extends ResourceController
 
     protected $format = 'json';
 
+    protected function getBearerToken(): ?string
+    {
+        $header = $this->request->getHeaderLine('Authorization');
+        if (preg_match('/^Bearer\s+(.+)$/i', $header, $matches)) {
+            return trim($matches[1]);
+        }
+
+        $fallback = $this->request->getHeaderLine('X-Auth-Token');
+        return $fallback !== '' ? trim($fallback) : null;
+    }
+
+    protected function decodeAuthToken(): ?array
+    {
+        $token = $this->getBearerToken();
+        if (!$token) {
+            return null;
+        }
+
+        $json = base64_decode($token, true);
+        if ($json === false) {
+            return null;
+        }
+
+        $payload = json_decode($json, true);
+        if (!is_array($payload) || empty($payload['type']) || empty($payload['id'])) {
+            return null;
+        }
+
+        return $payload;
+    }
+
+    protected function requireUserId()
+    {
+        $payload = $this->decodeAuthToken();
+        if (($payload['type'] ?? '') !== 'user') {
+            return $this->respondError('Authentication required', 401);
+        }
+
+        $userId = (int) $payload['id'];
+        \EmployeeApi\Models\SettingsModel::setCurrentUserId($userId);
+
+        return $userId;
+    }
+
+    protected function employeeBelongsToUser(int $employeeId, int $userId): bool
+    {
+        return (bool) (new \EmployeeApi\Models\EmployeeModel())
+            ->where('id', $employeeId)
+            ->where('user_id', $userId)
+            ->first();
+    }
+
+    protected function requireSuperadminId()
+    {
+        $payload = $this->decodeAuthToken();
+        if (($payload['type'] ?? '') !== 'superadmin') {
+            return $this->respondError('Superadmin authentication required', 401);
+        }
+
+        return (int) $payload['id'];
+    }
+
+    protected function makeAuthToken(string $type, int $id, string $label): string
+    {
+        return base64_encode(json_encode([
+            'type' => $type,
+            'id' => $id,
+            'label' => $label,
+            'iat' => time(),
+        ]));
+    }
+
     /**
      * Remove blank/null/empty values from data so they don't overwrite existing DB values.
      * Use this before any update() call.

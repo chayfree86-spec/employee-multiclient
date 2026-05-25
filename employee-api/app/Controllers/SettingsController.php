@@ -11,6 +11,9 @@ class SettingsController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new SettingsModel();
         return $this->respondSuccess($model->getAll(), 'Settings retrieved');
     }
@@ -20,6 +23,9 @@ class SettingsController extends BaseApiController
      */
     public function update($id = null)
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $data = $this->request->getJSON(true);
         if (!is_array($data) || empty($data)) {
             return $this->respondError('No settings provided', 400);

@@ -19,6 +19,12 @@ $routes->group('api/v1', ['namespace' => 'EmployeeApi\Controllers'], function($r
     $routes->get('logout', 'AuthController::logout');
     $routes->post('forgot-password', 'AuthController::forgotPassword');
 
+    $routes->post('superadmin/login', 'SuperadminController::login');
+    $routes->get('superadmin/users', 'SuperadminController::users');
+    $routes->post('superadmin/users', 'SuperadminController::createUser');
+    $routes->put('superadmin/users/(:num)', 'SuperadminController::updateUser/$1');
+    $routes->delete('superadmin/users/(:num)', 'SuperadminController::deleteUser/$1');
+
     // Employee Resources
     $routes->resource('employees', ['controller' => 'EmployeeController']);
     $routes->post('employees/(:num)/upload-image', 'EmployeeController::uploadImage/$1');

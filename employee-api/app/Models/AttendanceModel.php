@@ -9,7 +9,7 @@ class AttendanceModel extends Model
 {
     protected $table = 'attendance';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['employee_id', 'date', 'status', 'source', 'check_in', 'check_out'];
+    protected $allowedFields = ['user_id', 'employee_id', 'date', 'status', 'source', 'check_in', 'check_out'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = '';
@@ -41,6 +41,24 @@ class AttendanceModel extends Model
             ->getResultArray();
     }
 
+    public static function getWeeklyHolidayDay(): int
+    {
+        static $weekday = null;
+
+        if ($weekday !== null) {
+            return $weekday;
+        }
+
+        try {
+            $value = (int) (new SettingsModel())->getSetting('weekly_holiday', (string) Weekday::WEEKDAY);
+            $weekday = ($value >= 0 && $value <= 6) ? $value : Weekday::WEEKDAY;
+        } catch (\Throwable) {
+            $weekday = Weekday::WEEKDAY;
+        }
+
+        return $weekday;
+    }
+
     public static function getWeekdayDatesInMonth(int $month, int $year): array
     {
         $days = (int) date('t', mktime(0, 0, 0, $month, 1, $year));
@@ -49,7 +67,7 @@ class AttendanceModel extends Model
         for ($d = 1; $d <= $days; $d++) {
             $dayPad = str_pad((string)$d, 2, '0', STR_PAD_LEFT);
             $ymd = "{$year}-{$monthPad}-{$dayPad}";
-            if ((int) date('w', strtotime($ymd)) === Weekday::WEEKDAY) {
+            if ((int) date('w', strtotime($ymd)) === self::getWeeklyHolidayDay()) {
                 $dates[] = $ymd;
             }
         }
@@ -58,7 +76,7 @@ class AttendanceModel extends Model
 
     public static function isWeekday(string $date): bool
     {
-        return (int) date('w', strtotime($date)) === Weekday::WEEKDAY;
+        return (int) date('w', strtotime($date)) === self::getWeeklyHolidayDay();
     }
 
     public static function getEffectiveJoinDateForMonth(?string $joinDate, int $month, int $year): ?string

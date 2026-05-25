@@ -11,6 +11,9 @@ class AttendanceController extends BaseApiController
      */
     public function index()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AttendanceModel();
 
         $employee_id = $this->request->getGet('employee_id');
@@ -20,7 +23,10 @@ class AttendanceController extends BaseApiController
 
         if ($employee_id) {
             $employeeModel = new \EmployeeApi\Models\EmployeeModel();
-            $employee = $employeeModel->find($employee_id);
+            $employee = $employeeModel->where('user_id', $userId)->find($employee_id);
+            if (!$employee) {
+                return $this->respondError('Employee not found', 404);
+            }
             $joinDate = $employee['join_date'] ?? null;
 
             $data = [
@@ -32,7 +38,7 @@ class AttendanceController extends BaseApiController
 
         if ($scope === 'month') {
             $employeeModel = new \EmployeeApi\Models\EmployeeModel();
-            $employees = $employeeModel->select('id, join_date')->findAll();
+            $employees = $employeeModel->select('id, join_date')->where('user_id', $userId)->findAll();
 
             $data = [
                 'list' => $model->getMonthlyAttendanceSnapshot($employees, (int) $month, (int) $year)
@@ -41,7 +47,7 @@ class AttendanceController extends BaseApiController
         }
 
         $date = $this->request->getGet('date') ?? date('Y-m-d');
-        $attendance = $model->where('date', $date)->findAll();
+        $attendance = $model->where('user_id', $userId)->where('date', $date)->findAll();
         return $this->respondSuccess($attendance, "Attendance for $date retrieved");
     }
 
@@ -50,14 +56,22 @@ class AttendanceController extends BaseApiController
      */
     public function create()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AttendanceModel();
         $data = $this->request->getJSON(true);
 
         if (empty($data['employee_id']) || empty($data['date'])) {
             return $this->respondError('Employee ID and Date are required');
         }
+        if (!$this->employeeBelongsToUser((int) $data['employee_id'], $userId)) {
+            return $this->respondError('Employee not found', 404);
+        }
+        $data['user_id'] = $userId;
 
         $existing = $model->where([
+            'user_id'     => $userId,
             'employee_id' => $data['employee_id'],
             'date'        => $data['date']
         ])->first();
@@ -79,6 +93,9 @@ class AttendanceController extends BaseApiController
      */
     public function bulkCreate()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new AttendanceModel();
         $payload = $this->request->getJSON(true);
         $records = $payload['records'] ?? [];
@@ -95,8 +112,14 @@ class AttendanceController extends BaseApiController
                 $db->transRollback();
                 return $this->respondError('Employee ID and Date are required for each record');
             }
+            if (!$this->employeeBelongsToUser((int) $record['employee_id'], $userId)) {
+                $db->transRollback();
+                return $this->respondError('Employee not found', 404);
+            }
+            $record['user_id'] = $userId;
 
             $existing = $model->where([
+                'user_id'     => $userId,
                 'employee_id' => $record['employee_id'],
                 'date'        => $record['date']
             ])->first();

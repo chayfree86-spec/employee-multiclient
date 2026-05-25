@@ -70,8 +70,26 @@ class AttendanceModel extends Model
                    ->findAll();
     }
 
+    public static function getWeeklyHolidayDay(): int
+    {
+        static $weekday = null;
+
+        if ($weekday !== null) {
+            return $weekday;
+        }
+
+        try {
+            $value = (int) (new SettingsModel())->getSetting('weekly_holiday', (string) Weekday::WEEKDAY);
+            $weekday = ($value >= 0 && $value <= 6) ? $value : Weekday::WEEKDAY;
+        } catch (\Throwable) {
+            $weekday = Weekday::WEEKDAY;
+        }
+
+        return $weekday;
+    }
+
     /**
-     * Get weekday (Tuesday) dates in month.
+     * Get weekly holiday dates in month.
      */
     public static function getWeekdayDatesInMonth(int $month, int $year): array
     {
@@ -81,7 +99,7 @@ class AttendanceModel extends Model
         for ($d = 1; $d <= $days; $d++) {
             $dayPad = str_pad((string) $d, 2, '0', STR_PAD_LEFT);
             $ymd = "{$year}-{$monthPad}-{$dayPad}";
-            if ((int) date('w', strtotime($ymd)) === Weekday::WEEKDAY) {
+            if ((int) date('w', strtotime($ymd)) === self::getWeeklyHolidayDay()) {
                 $dates[] = $ymd;
             }
         }
@@ -89,11 +107,11 @@ class AttendanceModel extends Model
     }
 
     /**
-     * Check if date is weekday (Tuesday).
+     * Check if date is the configured weekly holiday.
      */
     public static function isWeekday(string $date): bool
     {
-        return (int) date('w', strtotime($date)) === Weekday::WEEKDAY;
+        return (int) date('w', strtotime($date)) === self::getWeeklyHolidayDay();
     }
 
     /**

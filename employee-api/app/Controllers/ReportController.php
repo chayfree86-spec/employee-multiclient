@@ -13,6 +13,9 @@ class ReportController extends BaseApiController
      */
     public function attendance()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $month = $this->request->getGet('month') ?? date('m');
         $year = $this->request->getGet('year') ?? date('Y');
 
@@ -21,7 +24,7 @@ class ReportController extends BaseApiController
         $payrollModel = new PayrollModel();
         $aofModel = new \EmployeeApi\Models\AdvanceOvertimeFineModel();
 
-        $employees = $employeeModel->findAll();
+        $employees = $employeeModel->where('user_id', $userId)->findAll();
         $reportData = [];
 
         foreach ($employees as $employee) {
@@ -56,6 +59,9 @@ class ReportController extends BaseApiController
      */
     public function salary()
     {
+        $userId = $this->requireUserId();
+        if (!is_int($userId)) return $userId;
+
         $model = new PayrollModel();
         $month = $this->request->getGet('month') ?? date('m');
         $year = $this->request->getGet('year') ?? date('Y');
@@ -63,6 +69,8 @@ class ReportController extends BaseApiController
 
         $builder = $model->select('payroll.*, employees.name, employees.mobile')
                         ->join('employees', 'employees.id = payroll.employee_id')
+                        ->where('payroll.user_id', $userId)
+                        ->where('employees.user_id', $userId)
                         ->where('month', $month)
                         ->where('year', $year);
 
@@ -128,7 +136,7 @@ class ReportController extends BaseApiController
     {
         $attendanceModel = new \EmployeeApi\Models\AttendanceModel();
         $employeeModel = new EmployeeModel();
-        $employee = $employeeModel->find($payroll['employee_id']);
+        $employee = $employeeModel->where('user_id', $payroll['user_id'] ?? 0)->find($payroll['employee_id']);
         $month = (int) $payroll['month'];
         $year = (int) $payroll['year'];
         $attendance = $attendanceModel->getMonthlyAttendanceEnriched($payroll['employee_id'], $month, $year, $employee['join_date'] ?? null);

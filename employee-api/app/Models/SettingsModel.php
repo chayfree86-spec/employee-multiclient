@@ -8,7 +8,7 @@ class SettingsModel extends Model
 {
     protected $table      = 'settings';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['setting_name', 'setting_value'];
+    protected $allowedFields = ['user_id', 'setting_name', 'setting_value'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
@@ -17,6 +17,24 @@ class SettingsModel extends Model
      * In-memory cache to avoid repeated DB queries within a single request.
      */
     protected static ?array $_cache = null;
+    protected static ?int $_currentUserId = null;
+
+    public static function setCurrentUserId(int $userId): void
+    {
+        if (static::$_currentUserId !== $userId) {
+            static::$_cache = null;
+        }
+        static::$_currentUserId = $userId;
+    }
+
+    private function currentUserId(): int
+    {
+        if (static::$_currentUserId === null) {
+            throw new \RuntimeException('Settings user context is not set');
+        }
+
+        return static::$_currentUserId;
+    }
 
     protected array $defaultSettings = [
         'cafe_name' => 'Cafe Admin',
@@ -42,7 +60,7 @@ class SettingsModel extends Model
     protected function loadCache(): void
     {
         if (static::$_cache === null) {
-            $rows = $this->findAll();
+            $rows = $this->where('user_id', $this->currentUserId())->findAll();
             static::$_cache = [];
             foreach ($rows as $row) {
                 static::$_cache[$row['setting_name']] = $row['setting_value'];
@@ -88,11 +106,12 @@ class SettingsModel extends Model
      */
     public function setSetting(string $name, string $value): void
     {
-        $existing = $this->where('setting_name', $name)->first();
+        $userId = $this->currentUserId();
+        $existing = $this->where('user_id', $userId)->where('setting_name', $name)->first();
         if ($existing) {
             $this->update($existing['id'], ['setting_value' => $value]);
         } else {
-            $this->insert(['setting_name' => $name, 'setting_value' => $value]);
+            $this->insert(['user_id' => $userId, 'setting_name' => $name, 'setting_value' => $value]);
         }
 
         // Invalidate cache

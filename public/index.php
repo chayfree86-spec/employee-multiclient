@@ -25,6 +25,24 @@ if (version_compare(PHP_VERSION, $minPhpVersion, '<')) {
 
 /*
  *---------------------------------------------------------------
+ * SERVE STATIC FILES WHEN USING PHP'S BUILT-IN SERVER
+ *---------------------------------------------------------------
+ *
+ * Apache/Nginx serve existing files before CodeIgniter via rewrite rules.
+ * The local PHP server needs this explicit guard when public/index.php is
+ * used as the router script.
+ */
+if (PHP_SAPI === 'cli-server') {
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+    $file = __DIR__ . DIRECTORY_SEPARATOR . ltrim((string) $path, '/\\');
+
+    if (is_file($file)) {
+        return false;
+    }
+}
+
+/*
+ *---------------------------------------------------------------
  * SET THE CURRENT DIRECTORY
  *---------------------------------------------------------------
  */

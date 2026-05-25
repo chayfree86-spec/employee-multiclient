@@ -8,7 +8,7 @@ class EmployeeModel extends Model
 {
     protected $table = 'employees';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['name', 'mobile', 'alternate_mobile', 'father_name', 'role', 'monthly_salary', 'status', 'join_date', 'date_of_birth', 'profile_image'];
+    protected $allowedFields = ['user_id', 'name', 'mobile', 'alternate_mobile', 'father_name', 'role', 'monthly_salary', 'status', 'join_date', 'date_of_birth', 'profile_image'];
     protected $useTimestamps = true;
     protected $createdField  = 'created_at';
     protected $updatedField  = '';
