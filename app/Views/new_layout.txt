@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title><?= $title ?? 'Employee Management System' ?></title>
+    <meta name="csrf-token" content="<?= csrf_hash() ?>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --sidebar-bg: #1e3a5f;
+            --sidebar-active: #2563eb;
+            --primary-color: #2563eb;
+            --theme-blue: #2563eb;
+            --theme-blue-dark: #1d4ed8;
+            --theme-yellow: #eab308;
+            --theme-yellow-dark: #ca8a04;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background: var(--sidebar-bg);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            z-index: 1000;
+            transition: transform var(--transition-speed) ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+            padding: 12px 20px;
+            margin: 4px 10px;
+            border-radius: 8px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all var(--transition-speed);
+        }
+
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background: rgba(255,255,255,.1);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link:active {
+            background: rgba(255,255,255,.15);
+        }
+
+        .sidebar .nav-link.active {
+            color: #fff;
+            background: var(--sidebar-active);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-theme-blue {
+            background: var(--theme-blue);
+            border-color: var(--theme-blue);
+            color: #fff;
+        }
+        .btn-theme-blue:hover {
+            background: var(--theme-blue-dark);
+            border-color: var(--theme-blue-dark);
+            color: #fff;
+        }
+        .btn-theme-yellow {
+            background: var(--theme-yellow);
+            border-color: var(--theme-yellow);
+            color: #1f2937;
+        }
+        .btn-theme-yellow:hover {
+            background: var(--theme-yellow-dark);
+            border-color: var(--theme-yellow-dark);
+            color: #1f2937;
+        }
+        .btn-outline-theme-yellow {
+            border-color: var(--theme-yellow);
+            color: var(--theme-yellow-dark);
+        }
+        .btn-outline-theme-yellow:hover {
+            background: var(--theme-yellow);
+            border-color: var(--theme-yellow);
+            color: #1f2937;
+        }
+        .bg-theme-blue { background: var(--theme-blue) !important; }
+        .bg-theme-yellow { background: var(--theme-yellow) !important; }
+        .text-theme-blue { color: var(--theme-blue) !important; }
+        .text-theme-yellow { color: var(--theme-yellow) !important; }
+        .btn-generate-payroll {
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+        }
+        .btn-generate-payroll:hover {
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: margin-left var(--transition-speed);
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        .mobile-header {
+            display: none;
+            background: var(--sidebar-bg);
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .mobile-header .btn {
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .mobile-header-logo {
+            max-height: 36px;
+            width: auto;
+            object-fit: contain;
+        }
+        .sidebar-logo {
+            display: block;
+            object-fit: contain;
+        }
+
+        /* App header: time left, user right */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px;
+            background: linear-gradient(135deg, #fff 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .app-header .header-time {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--theme-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .app-header .header-time i {
+            opacity: 0.9;
+        }
+        .app-header .header-user .dropdown-toggle {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #1e293b;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .app-header .header-user .dropdown-toggle:hover {
+            background: #f8fafc;
+            border-color: var(--theme-blue);
+            color: var(--theme-blue);
+        }
+        .app-header .header-user .dropdown-menu {
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+        .card-dashboard {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-dashboard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+        }
+
+        .card-stat .stat-icon {
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 6px 12px;
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            .app-header {
+                margin: -15px -15px 15px -15px;
+                padding: 10px 15px;
+            }
+            .app-header .header-time {
+                font-size: 0.9rem;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            h2, h3 {
+                font-size: 1.5rem;
+            }
+
+            .btn-lg {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading spinner */
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <button class="btn" id="sidebarToggle" type="button">
+            <i class="fas fa-bars"></i>
+        </button>
+        <img src="<?= base_url('public/images/logo.png') ?>" alt="Logo" class="mobile-header-logo ms-3" height="36">
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar p-3" id="sidebar">
+        <div class="d-flex justify-content-between align-items-center mb-4 d-md-none">
+            <img src="<?= base_url('public/images/logo.png') ?>" alt="Logo" class="sidebar-logo" height="40">
+            <button class="btn text-white" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="sidebar-brand d-none d-md-block mb-4">
+            <img src="<?= base_url('public/images/logo.png') ?>" alt="Chai Chaupal" class="sidebar-logo" style="max-width: 100%; height: auto; max-height: 56px;">
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link <?= uri_string() == '' || uri_string() == 'dashboard' ? 'active' : '' ?>" href="<?= base_url() ?>">
+                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= strpos(uri_string(), 'employee') === 0 ? 'active' : '' ?>" href="<?= base_url('employee') ?>">
+                    <i class="fas fa-users"></i> <span>Employees</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= strpos(uri_string(), 'attendance') === 0 ? 'active' : '' ?>" href="<?= base_url('attendance') ?>">
+                    <i class="fas fa-calendar-check"></i> <span>Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= strpos(uri_string(), 'payroll') === 0 ? 'active' : '' ?>" href="<?= base_url('payroll') ?>">
+                    <i class="fas fa-money-bill-wave"></i> <span>Payroll</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= strpos(uri_string(), 'report') === 0 ? 'active' : '' ?>" href="<?= base_url('report') ?>">
+                    <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                </a>
+            </li>
+        </ul>
+
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header: time (left), user (right) -->
+        <header class="app-header">
+            <div class="header-time">
+                <i class="fas fa-clock"></i>
+                <span id="headerLiveTime"><?= date('g:i A') ?></span>
+                <span class="text-muted small d-none d-sm-inline ms-1"><?= date('l, M j, Y') ?></span>
+            </div>
+            <?php if (session()->get('user')): ?>
+            <div class="header-user dropdown">
+                <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle fa-lg text-theme-blue"></i>
+                    <span><?= esc(session()->get('user')['username']) ?></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="<?= base_url('profile') ?>">
+                            <i class="fas fa-user-edit me-2"></i>Profile
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="<?= base_url('logout') ?>">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <?php endif; ?>
+        </header>
+
+        <h2 class="mb-4 text-theme-blue">
+            <?= $title ?? 'Dashboard' ?>
+        </h2>
+
+        <!-- Page Content -->
+        <?= $this->renderSection('content') ?>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Live header time
+        function updateHeaderTime() {
+            var el = document.getElementById('headerLiveTime');
+            if (el) {
+                var now = new Date();
+                var h = now.getHours(), m = now.getMinutes(), am = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                el.textContent = h + ':' + (m < 10 ? '0' + m : m) + ' ' + am;
+            }
+        }
+        setInterval(updateHeaderTime, 1000);
+        updateHeaderTime();
+
+        // Mobile sidebar toggle
+        $(document).ready(function() {
+            $('#sidebarToggle').on('click', function() {
+                $('#sidebar').addClass('show');
+                $('#sidebarOverlay').addClass('show');
+            });
+
+            $('#closeSidebar, #sidebarOverlay').on('click', function() {
+                $('#sidebar').removeClass('show');
+                $('#sidebarOverlay').removeClass('show');
+            });
+
+            // Close sidebar when clicking a link on mobile
+            $('.sidebar .nav-link').on('click', function() {
+                if ($(window).width() <= 768) {
+                    $('#sidebar').removeClass('show');
+                    $('#sidebarOverlay').removeClass('show');
+                }
+            });
+
+            // Close sidebar on window resize if desktop
+            $(window).on('resize', function() {
+                if ($(window).width() > 768) {
+                    $('#sidebar').removeClass('show');
+                    $('#sidebarOverlay').removeClass('show');
+                }
+            });
+
+            // Global flash messages via SweetAlert
+            <?php if (session()->getFlashdata('success')): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: <?= json_encode(session()->getFlashdata('success')) ?>,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            <?php endif; ?>
+
+            <?php if (session()->getFlashdata('error')): ?>
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: <?= json_encode(session()->getFlashdata('error')) ?>,
+                timer: 3000,
+                showConfirmButton: true
+            });
+            <?php endif; ?>
+        });
+    </script>
+    <?= $this->renderSection('scripts') ?>
+</body>
+</html>

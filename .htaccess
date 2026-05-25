@@ -1,0 +1,67 @@
+# Disable directory listing
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Live domain runs from the document root. Keep RewriteBase at / so
+# clean URLs like /api/v1/login reach CodeIgniter routes correctly.
+RewriteBase /
+
+# ==========================
+# ADMIN STATIC PAGES
+# ==========================
+# Old deployments may have root-level attendance.html/js/api.js files.
+# Send users to the tracked admin folder so cache-busted assets are loaded.
+RewriteRule ^$ emoloyee-admin/index.html [R=302,L]
+RewriteRule ^(attendance|salary|reports|staff|settings)\.html$ emoloyee-admin/$1.html [R=302,L]
+RewriteRule ^login\.html$ emoloyee-admin/index.html [R=302,L]
+
+# ==========================
+# REMOVE TRAILING SLASH
+# ==========================
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} (.+)/$
+RewriteRule ^ %1 [R=301,L]
+
+# ==========================
+# FORCE NON-WWW (LIVE ONLY)
+# ==========================
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+RewriteCond %{HTTP_HOST} !\.test$ [NC]
+RewriteCond %{HTTP_HOST} !\.local$ [NC]
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ %{REQUEST_SCHEME}://%1%{REQUEST_URI} [R=301,L]
+
+# ==========================
+# FORCE HTTPS (LIVE ONLY)
+# ==========================
+RewriteCond %{HTTP_HOST} !^localhost [NC]
+RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+RewriteCond %{HTTP_HOST} !\.test$ [NC]
+RewriteCond %{HTTP_HOST} !\.local$ [NC]
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# ==========================
+# FRONT CONTROLLER (MVC / Clean URL)
+# ==========================
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
+</IfModule>
+
+# ==========================
+# FALLBACK
+# ==========================
+<IfModule !mod_rewrite.c>
+ErrorDocument 404 /index.php
+</IfModule>
+
+# ==========================
+# SECURITY
+# ==========================
+ServerSignature Off
+RewriteRule ^$ emoloyee-admin/index.html [R=302,L]
