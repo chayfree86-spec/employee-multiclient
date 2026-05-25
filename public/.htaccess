@@ -17,7 +17,10 @@ Options -Indexes
 	# RewriteBase /
 
 	# Default admin screen
-	RewriteRule ^$ emoloyee-admin/attendance.html [R=302,L]
+	RewriteRule ^$ employee-admin/attendance.html [R=302,L]
+	RewriteRule ^superadmin/?$ employee-admin/superadmin/index.html [R=302,L]
+	RewriteRule ^superadmin/index\.html$ employee-admin/superadmin/index.html [R=302,L]
+	RewriteRule ^emoloyee-admin/(.*)$ employee-admin/$1 [R=302,L]
 
 	# Redirect Trailing Slashes...
 	RewriteCond %{REQUEST_FILENAME} !-d

@@ -23,7 +23,7 @@ const ApiClient = {
             return this.configuredApiRoot;
         }
 
-        const adminPath = '/emoloyee-admin';
+        const adminPath = '/employee-admin';
         const currentPath = window.location.pathname || '';
         const adminIndex = currentPath.indexOf(adminPath);
 
@@ -53,7 +53,7 @@ const ApiClient = {
                 this.gatewayUrl,
                 this.baseUrl,
                 `${this.appRoot}/index.php/api/v1`,
-                `${this.appRoot}/index.php?route=/api/v1`,
+                `${this.appRoot}/index.php?route=/api/v1`
             ];
         const candidates = this._workingBaseUrl
             ? [this._workingBaseUrl, ...fallbackCandidates]
@@ -166,6 +166,13 @@ const ApiClient = {
         if (params.id) query.set('id', params.id);
         if (params.username) query.set('username', params.username);
         return this.request(`/profile?${query.toString()}`);
+    },
+
+    updateProfile(id, data) {
+        return this.request(`/profile/update/${encodeURIComponent(id)}`, {
+            method: 'POST',
+            body: data
+        });
     },
 
     getDashboard() {

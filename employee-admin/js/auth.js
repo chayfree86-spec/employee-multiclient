@@ -284,7 +284,7 @@ const AuthManager = {
         sessionStorage.removeItem(AuthManager.storageKey('username'));
         sessionStorage.removeItem(AuthManager.storageKey('user'));
         sessionStorage.removeItem(AuthManager.storageKey('from_superadmin'));
-        window.location.href = '/superadmin/index.html';
+        window.location.href = '/employee-admin/superadmin/index.html';
     },
 
     renderSuperadminBackButton: () => {

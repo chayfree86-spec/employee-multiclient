@@ -74,12 +74,13 @@ $routes->group('api/v1', ['namespace' => 'EmployeeApi\Controllers'], static func
 
 // Main UI: serve the static employee admin design. Legacy CI views/controllers
 // remain available behind their specific routes so API/data functionality stays intact.
-$routes->get('/', static fn () => redirect()->to('/emoloyee-admin/index.html'));
-$routes->get('/dashboard', static fn () => redirect()->to('/emoloyee-admin/index.html'));
-$routes->get('/superadmin', static fn () => redirect()->to('/superadmin/index.html'));
+$routes->get('/', static fn () => redirect()->to('/employee-admin/attendance.html'));
+$routes->get('/dashboard', static fn () => redirect()->to('/employee-admin/attendance.html'));
+$routes->get('/superadmin', static fn () => redirect()->to('/employee-admin/superadmin/index.html'));
+$routes->get('/superadmin/index.html', static fn () => redirect()->to('/employee-admin/superadmin/index.html'));
 
 // Auth routes
-$routes->get('/login', static fn () => redirect()->to('/emoloyee-admin/index.html'));
+$routes->get('/login', static fn () => redirect()->to('/employee-admin/attendance.html'));
 $routes->post('/login', 'Auth::login');
 $routes->get('/logout', 'Auth::logout');
 

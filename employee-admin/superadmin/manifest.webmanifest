@@ -1,0 +1,25 @@
+{
+  "name": "Employee Superadmin",
+  "short_name": "Superadmin",
+  "description": "Mobile console for managing employee business users.",
+  "start_url": "/employee-admin/superadmin/index.html",
+  "scope": "/employee-admin/superadmin/",
+  "display": "standalone",
+  "background_color": "#f7f5f2",
+  "theme_color": "#211b18",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/public/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/public/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

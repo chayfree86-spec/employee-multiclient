@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Superadmin - Employee Multiclient</title>
+    <meta name="theme-color" content="#211b18">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Superadmin">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -457,6 +463,206 @@
         .empty-state h3 { margin: 0; font-size: 18px; }
         .empty-state p { max-width: 390px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
 
+        .native-control-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            border: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-trigger,
+        .custom-date-trigger {
+            width: 100%;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 13px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--ink);
+            background: #fff;
+            font-weight: 500;
+            text-align: left;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
+        }
+
+        .custom-select-trigger:hover,
+        .custom-date-trigger:hover {
+            border-color: var(--line-strong);
+            background: #fff;
+        }
+
+        .custom-select.open .custom-select-trigger,
+        .custom-date-wrap.open .custom-date-trigger {
+            border-color: rgba(21, 128, 61, .45);
+            box-shadow: 0 0 0 4px rgba(21, 128, 61, .10);
+        }
+
+        .custom-select-trigger i,
+        .custom-date-trigger i {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .custom-select-menu,
+        .custom-date-panel {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 80;
+            display: none;
+            padding: 7px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .98);
+            box-shadow: 0 22px 55px rgba(24, 19, 16, .18);
+            backdrop-filter: blur(16px);
+        }
+
+        .custom-select.open .custom-select-menu,
+        .custom-date-wrap.open .custom-date-panel {
+            display: block;
+        }
+
+        .custom-select-option {
+            width: 100%;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 10px;
+            border-radius: 11px;
+            color: #332b25;
+            background: transparent;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .custom-select-option:hover,
+        .custom-select-option.active {
+            color: #fff;
+            background: var(--brand);
+        }
+
+        .custom-select-option i {
+            opacity: 0;
+            font-size: 12px;
+        }
+
+        .custom-select-option.active i {
+            opacity: 1;
+        }
+
+        .custom-date-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-date-trigger span:empty::before {
+            content: "dd-mm-yyyy";
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .custom-date-panel {
+            width: min(320px, calc(100vw - 36px));
+            right: auto;
+            padding: 12px;
+        }
+
+        #user-dialog .custom-date-wrap.open .custom-date-panel {
+            position: static;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        #user-dialog .custom-select.open .custom-select-menu {
+            position: static;
+            margin-top: 8px;
+        }
+
+        .calendar-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .calendar-title {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .calendar-nav button {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            color: #463f38;
+            background: #f8f5ef;
+        }
+
+        .calendar-weekdays,
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-weekdays {
+            margin-bottom: 6px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .calendar-day {
+            width: 100%;
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            color: #2b2621;
+            background: transparent;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .calendar-day.outside {
+            color: #a39a90;
+        }
+
+        .calendar-day.today {
+            background: #f3eee7;
+            color: var(--brand);
+        }
+
+        .calendar-day.selected {
+            color: #fff;
+            background: var(--brand);
+            box-shadow: 0 9px 18px rgba(21, 128, 61, .22);
+        }
+
         dialog {
             width: min(680px, calc(100vw - 28px));
             padding: 0;
@@ -471,7 +677,7 @@
         }
 
         .modal-card {
-            overflow: hidden;
+            overflow: visible;
             border: 1px solid var(--line);
             border-radius: 22px;
             background: #fff;
@@ -529,6 +735,357 @@
             .table-tools { grid-template-columns: 1fr; }
             .pagination { align-items: flex-start; flex-direction: column; }
             .grid { grid-template-columns: 1fr; }
+        }
+
+        .superadmin-pwa-nav { display: none; }
+
+        @media (max-width: 760px) {
+            body {
+                background:
+                    linear-gradient(180deg, #211b18 0 106px, transparent 106px),
+                    linear-gradient(135deg, #f8f5ef 0%, #eee8df 100%);
+            }
+
+            body.superadmin-authenticated {
+                padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+            }
+
+            .login-page {
+                padding: 18px;
+                align-items: end;
+                background:
+                    linear-gradient(180deg, #211b18 0 34%, transparent 34%),
+                    linear-gradient(135deg, #f8f5ef, #eee8df);
+            }
+
+            .login-card {
+                width: 100%;
+                padding: 24px;
+                border-radius: 22px;
+            }
+
+            .shell {
+                display: block;
+                min-height: 100svh;
+            }
+
+            .sidebar {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                height: auto;
+                min-height: 94px;
+                display: flex;
+                justify-content: center;
+                padding: calc(16px + env(safe-area-inset-top, 0px)) 18px 18px;
+                background:
+                    linear-gradient(135deg, rgba(242, 193, 122, .10), transparent 48%),
+                    linear-gradient(180deg, #2f251f, #171311);
+                box-shadow: 0 14px 34px rgba(31, 23, 18, .22);
+            }
+
+            .brand {
+                width: 100%;
+                max-width: 430px;
+                font-size: 20px;
+            }
+
+            .brand-badge {
+                width: 34px;
+                height: 34px;
+                border-radius: 12px;
+            }
+
+            .sidebar-subtitle,
+            .nav-card {
+                display: none;
+            }
+
+            .main {
+                width: 100%;
+                max-width: 430px;
+                margin: 0 auto;
+                padding: 20px 16px 0;
+            }
+
+            .top {
+                display: grid;
+                gap: 18px;
+                margin-bottom: 18px;
+            }
+
+            .eyebrow {
+                margin-bottom: 6px;
+                font-size: 11px;
+                letter-spacing: .08em;
+            }
+
+            .page-title {
+                font-size: 30px;
+            }
+
+            .page-subtitle {
+                max-width: 320px;
+                margin-top: 8px;
+                font-size: 14px;
+            }
+
+            .toolbar {
+                display: grid;
+                grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
+                width: 100%;
+                gap: 9px;
+            }
+
+            .toolbar .btn,
+            .toolbar .btn-icon {
+                min-height: 44px;
+                border-radius: 12px;
+            }
+
+            .toolbar .btn {
+                padding: 10px 11px;
+            }
+
+            .table-card {
+                border-radius: 18px;
+                box-shadow: 0 18px 48px rgba(42, 32, 24, .10);
+            }
+
+            .table-tools {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 16px;
+            }
+
+            .table-tools input,
+            .table-tools select,
+            .counter {
+                min-height: 42px;
+                border-radius: 12px;
+            }
+
+            .counter {
+                justify-content: flex-start;
+            }
+
+            .table-scroll {
+                max-height: none;
+                min-height: 0;
+                overflow: visible;
+            }
+
+            table,
+            thead,
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+                min-width: 0;
+            }
+
+            table {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tbody {
+                display: grid;
+                gap: 10px;
+                padding: 12px;
+                background: #fff;
+            }
+
+            tbody tr {
+                position: relative;
+                display: grid;
+                gap: 8px;
+                padding: 12px;
+                border: 1px solid #eee7df;
+                border-radius: 18px;
+                background: linear-gradient(180deg, #fff, #fbfaf8);
+                box-shadow: 0 12px 26px rgba(42, 32, 24, .06);
+            }
+
+            tbody tr:hover {
+                box-shadow: 0 12px 26px rgba(42, 32, 24, .08);
+            }
+
+            tbody td {
+                display: grid;
+                grid-template-columns: minmax(92px, .45fr) minmax(0, 1fr);
+                align-items: center;
+                gap: 8px;
+                padding: 0;
+                border: 0;
+                font-size: 13px;
+                text-align: right;
+            }
+
+            tbody td[data-label="Email"],
+            tbody td[data-label="Created"] {
+                display: none;
+            }
+
+            tbody td::before {
+                content: attr(data-label);
+                color: var(--muted);
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: .04em;
+                text-align: left;
+                text-transform: uppercase;
+            }
+
+            tbody td:first-child {
+                grid-template-columns: 1fr;
+                text-align: left;
+            }
+
+            tbody td:first-child::before {
+                display: none;
+            }
+
+            .user-cell {
+                min-width: 0;
+            }
+
+            .user-name,
+            .user-sub {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .avatar {
+                width: 42px;
+                height: 42px;
+            }
+
+            .status {
+                justify-self: end;
+                min-height: 26px;
+                padding: 5px 9px;
+            }
+
+            .actions {
+                justify-content: flex-end;
+            }
+
+            .actions .btn-icon {
+                width: 38px;
+                height: 38px;
+                border-radius: 12px;
+            }
+
+            .pagination {
+                align-items: center;
+                flex-direction: row;
+                padding: 13px 16px 16px;
+                font-size: 12px;
+            }
+
+            .pager-buttons .btn-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 13px;
+            }
+
+            dialog {
+                width: min(430px, calc(100vw - 24px));
+            }
+
+            .modal-card {
+                max-height: calc(100svh - 28px);
+                overflow: auto;
+                border-radius: 22px;
+            }
+
+            .modal-head,
+            .modal-body,
+            .modal-actions {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 13px;
+            }
+
+            .modal-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .superadmin-pwa-nav {
+                position: fixed;
+                left: max(12px, env(safe-area-inset-left, 0px));
+                right: max(12px, env(safe-area-inset-right, 0px));
+                bottom: max(8px, env(safe-area-inset-bottom, 0px));
+                z-index: 40;
+                display: none;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 5px;
+                min-height: 62px;
+                padding: 6px;
+                border: 1px solid rgba(215, 205, 193, .86);
+                border-radius: 24px;
+                background: rgba(255, 255, 255, .94);
+                box-shadow: 0 24px 60px rgba(24, 19, 16, .22), inset 0 1px 0 rgba(255,255,255,.9);
+                backdrop-filter: blur(20px) saturate(1.2);
+            }
+
+            body.superadmin-authenticated .superadmin-pwa-nav {
+                display: grid;
+            }
+
+            .superadmin-pwa-item {
+                min-width: 0;
+                min-height: 50px;
+                display: grid;
+                place-items: center;
+                align-content: center;
+                gap: 3px;
+                padding: 6px 3px;
+                border: 0;
+                border-radius: 18px;
+                color: #5f574f;
+                background: transparent;
+                text-decoration: none;
+                font-size: 10px;
+                font-weight: 900;
+                letter-spacing: 0;
+                white-space: nowrap;
+            }
+
+            .superadmin-pwa-item i {
+                width: 24px;
+                height: 24px;
+                display: inline-grid;
+                place-items: center;
+                border-radius: 10px;
+                background: rgba(95, 87, 79, .08);
+                font-size: 13px;
+            }
+
+            .superadmin-pwa-item.active {
+                color: #fff;
+                background: linear-gradient(180deg, #178b45, #0f6a32);
+                box-shadow: 0 14px 26px rgba(21, 128, 61, .28);
+                transform: translateY(-2px);
+            }
+
+            .superadmin-pwa-item.active i {
+                background: rgba(255, 255, 255, .17);
+            }
         }
     </style>
 </head>
@@ -637,6 +1194,25 @@
         </main>
     </section>
 
+    <nav id="superadmin-pwa-nav" class="superadmin-pwa-nav" aria-label="Superadmin mobile actions">
+        <button type="button" class="superadmin-pwa-item active" onclick="scrollToUsers()" aria-label="Users">
+            <i class="fas fa-users-gear"></i>
+            <span>Users</span>
+        </button>
+        <button type="button" class="superadmin-pwa-item" onclick="openUserModal()" aria-label="New user">
+            <i class="fas fa-plus"></i>
+            <span>New</span>
+        </button>
+        <button type="button" class="superadmin-pwa-item" onclick="loadUsers()" aria-label="Refresh users">
+            <i class="fas fa-rotate"></i>
+            <span>Refresh</span>
+        </button>
+        <button type="button" class="superadmin-pwa-item" onclick="logout()" aria-label="Logout">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </button>
+    </nav>
+
     <dialog id="user-dialog">
         <div class="modal-card">
             <div class="modal-head">
@@ -680,7 +1256,14 @@
                     </div>
                     <div>
                         <label for="created_at">Creation Date</label>
-                        <input id="created_at" type="date">
+                        <input id="created_at" type="hidden">
+                        <div class="custom-date-wrap" id="created-at-picker">
+                            <button type="button" class="custom-date-trigger" id="created-at-trigger" aria-label="Select creation date">
+                                <span id="created-at-label"></span>
+                                <i class="fas fa-calendar-days"></i>
+                            </button>
+                            <div class="custom-date-panel" id="created-at-panel"></div>
+                        </div>
                     </div>
                     <div class="span-all">
                         <label for="address">Address</label>
@@ -704,6 +1287,167 @@
         const pageSize = 8;
         let users = [];
         let currentPage = 1;
+        let calendarMonth = new Date();
+
+        function initCustomControls() {
+            setupCustomSelect('status-filter');
+            setupCustomSelect('status');
+            setupDatePicker();
+            document.addEventListener('click', closeCustomPopovers);
+        }
+
+        function closeCustomPopovers(event = null) {
+            if (event?.target?.closest?.('.custom-select, .custom-date-wrap')) return;
+            document.querySelectorAll('.custom-select.open, .custom-date-wrap.open').forEach((el) => el.classList.remove('open'));
+        }
+
+        function setupCustomSelect(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select || select.dataset.customReady === 'true') return;
+
+            select.dataset.customReady = 'true';
+            select.classList.add('native-control-hidden');
+
+            const wrap = document.createElement('div');
+            wrap.className = 'custom-select';
+            wrap.dataset.for = selectId;
+            wrap.innerHTML = `
+                <button type="button" class="custom-select-trigger" aria-label="${select.getAttribute('aria-label') || 'Select option'}">
+                    <span></span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="custom-select-menu"></div>
+            `;
+            select.insertAdjacentElement('afterend', wrap);
+
+            const trigger = wrap.querySelector('.custom-select-trigger');
+            const label = trigger.querySelector('span');
+            const menu = wrap.querySelector('.custom-select-menu');
+
+            const sync = () => {
+                const selected = select.options[select.selectedIndex];
+                label.textContent = selected?.textContent || '';
+                menu.innerHTML = Array.from(select.options).map((option) => `
+                    <button type="button" class="custom-select-option ${option.value === select.value ? 'active' : ''}" data-value="${escapeHtml(option.value)}">
+                        <span>${escapeHtml(option.textContent)}</span>
+                        <i class="fas fa-check"></i>
+                    </button>
+                `).join('');
+            };
+
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                document.querySelectorAll('.custom-select.open, .custom-date-wrap.open').forEach((el) => {
+                    if (el !== wrap) el.classList.remove('open');
+                });
+                sync();
+                wrap.classList.toggle('open');
+            });
+
+            menu.addEventListener('click', (event) => {
+                const option = event.target.closest('.custom-select-option');
+                if (!option) return;
+                select.value = option.dataset.value;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+                wrap.classList.remove('open');
+            });
+
+            select.addEventListener('change', sync);
+            sync();
+        }
+
+        function syncCustomSelect(selectId) {
+            const select = document.getElementById(selectId);
+            select?.dispatchEvent(new Event('change'));
+        }
+
+        function setupDatePicker() {
+            const trigger = document.getElementById('created-at-trigger');
+            const panel = document.getElementById('created-at-panel');
+            if (!trigger || !panel || trigger.dataset.dateReady === 'true') return;
+
+            trigger.dataset.dateReady = 'true';
+            trigger.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const picker = document.getElementById('created-at-picker');
+                document.querySelectorAll('.custom-select.open, .custom-date-wrap.open').forEach((el) => {
+                    if (el !== picker) el.classList.remove('open');
+                });
+                const selected = parseIsoDate(document.getElementById('created_at')?.value) || new Date();
+                calendarMonth = new Date(selected.getFullYear(), selected.getMonth(), 1);
+                renderCalendar();
+                picker.classList.toggle('open');
+            });
+
+            panel.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const action = event.target.closest('[data-calendar-action]')?.dataset.calendarAction;
+                const day = event.target.closest('[data-date]')?.dataset.date;
+
+                if (action === 'prev' || action === 'next') {
+                    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + (action === 'next' ? 1 : -1), 1);
+                    renderCalendar();
+                    return;
+                }
+
+                if (day) {
+                    setCreatedDate(day);
+                    document.getElementById('created-at-picker')?.classList.remove('open');
+                }
+            });
+        }
+
+        function renderCalendar() {
+            const panel = document.getElementById('created-at-panel');
+            if (!panel) return;
+
+            const selectedIso = document.getElementById('created_at')?.value || '';
+            const todayIso = toDateInputValue(new Date());
+            const monthStart = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
+            const gridStart = new Date(monthStart);
+            gridStart.setDate(monthStart.getDate() - monthStart.getDay());
+            const monthLabel = monthStart.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            const weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            const days = [];
+
+            for (let i = 0; i < 42; i += 1) {
+                const date = new Date(gridStart);
+                date.setDate(gridStart.getDate() + i);
+                const iso = toDateInputValue(date);
+                const classes = [
+                    'calendar-day',
+                    date.getMonth() !== monthStart.getMonth() ? 'outside' : '',
+                    iso === todayIso ? 'today' : '',
+                    iso === selectedIso ? 'selected' : ''
+                ].filter(Boolean).join(' ');
+                days.push(`<button type="button" class="${classes}" data-date="${iso}">${date.getDate()}</button>`);
+            }
+
+            panel.innerHTML = `
+                <div class="calendar-head">
+                    <div class="calendar-title">${escapeHtml(monthLabel)}</div>
+                    <div class="calendar-nav">
+                        <button type="button" data-calendar-action="prev" aria-label="Previous month"><i class="fas fa-chevron-left"></i></button>
+                        <button type="button" data-calendar-action="next" aria-label="Next month"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="calendar-weekdays">${weekdays.map((day) => `<span>${day}</span>`).join('')}</div>
+                <div class="calendar-grid">${days.join('')}</div>
+            `;
+        }
+
+        function setCreatedDate(value) {
+            const input = document.getElementById('created_at');
+            const label = document.getElementById('created-at-label');
+            if (!input || !label) return;
+
+            const iso = toDateInputValue(value) || todayInputValue();
+            input.value = iso;
+            label.textContent = formatInputDate(iso);
+            calendarMonth = parseIsoDate(iso) || new Date();
+            renderCalendar();
+        }
 
         function headers() {
             const token = sessionStorage.getItem(tokenKey);
@@ -727,8 +1471,7 @@
                     })
                 });
                 sessionStorage.setItem(tokenKey, data.token);
-                document.getElementById('login').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
+                showAppShell();
                 await loadUsers();
             } catch (error) {
                 alert(error.message);
@@ -773,7 +1516,7 @@
                 const ownerName = user.owner_name || user.username || '';
                 return `
                     <tr onclick="openUserPanel(${user.id})" title="Open user panel">
-                        <td>
+                        <td data-label="User">
                             <div class="user-cell">
                                 <span class="avatar">${escapeHtml(initials(displayName, ownerName))}</span>
                                 <div>
@@ -782,13 +1525,13 @@
                                 </div>
                             </div>
                         </td>
-                        <td>${escapeHtml(user.mobile || '-')}</td>
-                        <td>${escapeHtml(user.email || '-')}</td>
-                        <td>${user.employee_count || 0}</td>
-                        <td>${escapeHtml(formatDate(user.created_at))}</td>
-                        <td><span class="status ${lifecycle.expired ? 'inactive' : 'active'}">${escapeHtml(lifecycle.label)}</span></td>
-                        <td><span class="status ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Deactivated'}</span></td>
-                        <td>
+                        <td data-label="Mobile">${escapeHtml(user.mobile || '-')}</td>
+                        <td data-label="Email">${escapeHtml(user.email || '-')}</td>
+                        <td data-label="Staff">${user.employee_count || 0}</td>
+                        <td data-label="Created">${escapeHtml(formatDate(user.created_at))}</td>
+                        <td data-label="Validity"><span class="status ${lifecycle.expired ? 'inactive' : 'active'}">${escapeHtml(lifecycle.label)}</span></td>
+                        <td data-label="Status"><span class="status ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Deactivated'}</span></td>
+                        <td data-label="Actions">
                             <div class="actions">
                                 <button class="btn-icon" onclick="event.stopPropagation(); openUserModal(${user.id})" title="Edit user" aria-label="Edit user">
                                     <i class="fas fa-pen"></i>
@@ -852,7 +1595,7 @@
             sessionStorage.setItem('employee_management_admin_username', user.username || user.mobile || '');
             sessionStorage.setItem('employee_management_admin_user', JSON.stringify(displayUser));
             sessionStorage.setItem('employee_management_admin_from_superadmin', 'true');
-            window.location.href = '/emoloyee-admin/attendance.html';
+            window.location.href = '/employee-admin/attendance.html';
         }
 
         function openUserModal(id = null) {
@@ -865,15 +1608,17 @@
                 if (key === 'password') {
                     el.value = '';
                 } else if (key === 'created_at') {
-                    el.value = toDateInputValue(user.created_at) || todayInputValue();
+                    setCreatedDate(toDateInputValue(user.created_at) || todayInputValue());
                 } else {
                     el.value = user[field] || (key === 'status' ? 'active' : '');
                 }
             }
+            syncCustomSelect('status');
             document.getElementById('user-dialog').showModal();
         }
 
         function closeUserModal() {
+            closeCustomPopovers();
             document.getElementById('user-dialog').close();
         }
 
@@ -903,7 +1648,18 @@
 
         function logout() {
             sessionStorage.removeItem(tokenKey);
+            document.body.classList.remove('superadmin-authenticated');
             location.reload();
+        }
+
+        function showAppShell() {
+            document.body.classList.add('superadmin-authenticated');
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+        }
+
+        function scrollToUsers() {
+            document.querySelector('.table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function initials(name, fallback = '') {
@@ -934,12 +1690,27 @@
         }
 
         function toDateInputValue(value) {
-            const date = parseDate(value);
+            const date = parseIsoDate(value) || parseDate(value);
             if (!date) return '';
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
+        }
+
+        function parseIsoDate(value) {
+            const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return null;
+            const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function formatInputDate(value) {
+            const date = parseIsoDate(value);
+            if (!date) return '';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${day}-${month}-${date.getFullYear()}`;
         }
 
         function todayInputValue() {
@@ -948,6 +1719,9 @@
 
         function parseDate(value) {
             if (!value) return null;
+            if (value instanceof Date) {
+                return Number.isNaN(value.getTime()) ? null : value;
+            }
             const normalized = String(value).replace(' ', 'T');
             const date = new Date(normalized);
             return Number.isNaN(date.getTime()) ? null : date;
@@ -961,10 +1735,17 @@
             return String(value ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
         }
 
+        initCustomControls();
+
         if (sessionStorage.getItem(tokenKey)) {
-            document.getElementById('login').classList.add('hidden');
-            document.getElementById('app').classList.remove('hidden');
+            showAppShell();
             loadUsers().catch(() => logout());
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
         }
     </script>
 </body>

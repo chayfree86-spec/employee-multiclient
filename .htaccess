@@ -13,9 +13,12 @@ RewriteBase /
 # ==========================
 # Old deployments may have root-level attendance.html/js/api.js files.
 # Send users to the tracked admin folder so cache-busted assets are loaded.
-RewriteRule ^$ emoloyee-admin/attendance.html [R=302,L]
-RewriteRule ^(attendance|salary|reports|staff|settings)\.html$ emoloyee-admin/$1.html [R=302,L]
-RewriteRule ^login\.html$ emoloyee-admin/attendance.html [R=302,L]
+RewriteRule ^$ employee-admin/attendance.html [R=302,L]
+RewriteRule ^(attendance|salary|reports|staff|settings)\.html$ employee-admin/$1.html [R=302,L]
+RewriteRule ^login\.html$ employee-admin/attendance.html [R=302,L]
+RewriteRule ^superadmin/?$ employee-admin/superadmin/index.html [R=302,L]
+RewriteRule ^superadmin/index\.html$ employee-admin/superadmin/index.html [R=302,L]
+RewriteRule ^emoloyee-admin/(.*)$ employee-admin/$1 [R=302,L]
 
 # ==========================
 # REMOVE TRAILING SLASH
@@ -64,7 +67,7 @@ ErrorDocument 404 /index.php
 # SECURITY
 # ==========================
 ServerSignature Off
-RewriteRule ^$ emoloyee-admin/attendance.html [R=302,L]
+RewriteRule ^$ employee-admin/attendance.html [R=302,L]
 
 # ==========================
 # PERFORMANCE: STATIC ASSETS
