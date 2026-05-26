@@ -10,13 +10,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/employee-admin/icons/icon-192.png",
-      "sizes": "192x192",
+      "src": "/public/images/pwa-icon.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/employee-admin/icons/icon-512.png",
+      "src": "/public/images/pwa-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

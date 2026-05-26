@@ -14,8 +14,7 @@ const APP_SHELL = [
   '/employee-admin/js/min/theme.js?v=20260313-1',
   '/employee-admin/js/min/auth.js?v=20260525-11',
   '/employee-admin/js/min/main.js?v=20260525-13',
-  '/employee-admin/icons/icon-192.png',
-  '/employee-admin/icons/icon-512.png'
+  '/public/images/pwa-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
