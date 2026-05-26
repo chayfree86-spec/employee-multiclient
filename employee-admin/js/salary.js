@@ -116,7 +116,7 @@ const SalaryManager = {
                 <!-- Header & Stats -->
                 <div class="salary-dashboard-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
                     <div>
-                        <h1 style="font-size:2rem; font-weight:800; color:var(--text-main); margin-bottom:0.5rem;">Salary Dashboard</h1>
+                        <h1 style="font-size:2rem; font-weight:700; color:var(--text-main); margin-bottom:0.5rem;">Salary Dashboard</h1>
                         <p style="color:var(--text-muted); font-weight:600;">Manage monthly payroll and deductions</p>
                     </div>
                     <div class="salary-filter-bar" style="display:flex; align-items:center; gap:0.5rem; background:var(--bg-card); padding:8px; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
@@ -156,7 +156,7 @@ const SalaryManager = {
                         </div>
                         <div>
                             <label style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Total Payable</label>
-                            <h2 id="stats-total-payable" style="font-size:1.6rem; font-weight:800; color:var(--text-main); margin:0;">₹0</h2>
+                            <h2 id="stats-total-payable" style="font-size:1.6rem; font-weight:700; color:var(--text-main); margin:0;">₹0</h2>
                             <div id="stats-pay-period" style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Period: -</div>
                             <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Gross Salary: <span id="stats-total-earned">₹0</span></div>
                             <span style="font-size:0.75rem; color:var(--success); font-weight:700;"><i class="fas fa-check-circle"></i> Ready to Pay</span>
@@ -170,7 +170,7 @@ const SalaryManager = {
                         </div>
                         <div>
                             <label style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Total Held Amount</label>
-                            <h2 id="stats-total-held" style="font-size:1.6rem; font-weight:800; color:var(--danger); margin:0;">₹0</h2>
+                            <h2 id="stats-total-held" style="font-size:1.6rem; font-weight:700; color:var(--danger); margin:0;">₹0</h2>
                             <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-bottom:4px;">Held for <span id="stats-held-count">0</span> Staff</div>
                             <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;"><i class="fas fa-lock"></i> Locked</span>
                         </div>
@@ -183,7 +183,7 @@ const SalaryManager = {
                         </div>
                         <div>
                             <label style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Advance Adjusted</label>
-                            <h2 id="stats-total-advance" style="font-size:1.6rem; font-weight:800; color:#6c5ce7; margin:0;">₹0</h2>
+                            <h2 id="stats-total-advance" style="font-size:1.6rem; font-weight:700; color:#6c5ce7; margin:0;">₹0</h2>
                             <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;"><i class="fas fa-sync-alt"></i> Deducted</span>
                         </div>
                     </div>
@@ -330,7 +330,7 @@ const SalaryManager = {
                         <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Bal: ₹${advBalance.toLocaleString()}</div>
                     </td>
                     <td data-label="Final Payable" style="padding:1.2rem;">
-                        <div style="font-size:1.1rem; font-weight:800; color:#0984e3;">₹${finalSalary.toLocaleString()}</div>
+                        <div style="font-size:1.1rem; font-weight:700; color:#0984e3;">₹${finalSalary.toLocaleString()}</div>
                     </td>
                     <td data-label="Action" style="padding:1.2rem; text-align:right;">
                         <div class="salary-row-actions" style="display:flex; justify-content:flex-end; gap:8px;">
@@ -529,7 +529,7 @@ const SalaryManager = {
                             <div style="font-size:0.7rem; color:var(--text-muted); font-weight:600;">Bal: ₹${advBalance.toLocaleString()}</div>
                         </td>
                         <td data-label="Final Payable" style="padding:1.2rem;">
-                            <div style="font-size:1.1rem; font-weight:800; color:#0984e3;">₹${finalSalary.toLocaleString()}</div>
+                            <div style="font-size:1.1rem; font-weight:700; color:#0984e3;">₹${finalSalary.toLocaleString()}</div>
                         </td>
                         <td data-label="Action" style="padding:1.2rem; text-align:right;">
                             <div class="salary-row-actions" style="display:flex; justify-content:flex-end; gap:8px;">
@@ -826,7 +826,7 @@ const SalaryManager = {
                     <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-top:14px;">
                         <div style="padding:10px 12px; border-radius:12px; background:rgba(9, 132, 227, 0.06); border:1px solid rgba(9, 132, 227, 0.12);">
                             <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Balance</div>
-                            <div style="font-size:1rem; font-weight:800; color:var(--info); margin-top:4px;">₹${advBalance.toLocaleString()}</div>
+                            <div style="font-size:1rem; font-weight:700; color:var(--info); margin-top:4px;">₹${advBalance.toLocaleString()}</div>
                         </div>
                     </div>
                     <div id="config-adv-options" style="display:none; margin-top:1.2rem; padding-top:1.2rem; border-top:1px dashed var(--border);">
@@ -850,7 +850,7 @@ const SalaryManager = {
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-minus-circle" style="color:var(--danger); font-size:0.9rem;"></i>
-                            <span style="font-weight:800; font-size:0.84rem; color:var(--text-main);">Payment Deduction</span>
+                            <span style="font-weight:700; font-size:0.84rem; color:var(--text-main);">Payment Deduction</span>
                         </div>
                         <button class="btn-icon" style="color:var(--danger); background:rgba(214,48,49,0.07); border:none; width:24px; height:24px;" onclick="SalaryManager.showDeductionPopup('${staffId}', ${currentMonth}, ${currentYear})" title="Add New Deduction">
                             <i class="fas fa-plus" style="font-size:0.8rem;"></i>
@@ -863,7 +863,7 @@ const SalaryManager = {
                         ` : monthlyFineEntries.map(f => `
                             <div style="display:flex; align-items:center; justify-content:space-between; background:white; padding:5px 8px; border-radius:9px; border:1px solid var(--border);">
                                 <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                                    <div style="font-weight:800; color:var(--danger); font-size:0.95rem; white-space:nowrap;">₹${Number(f.amount || 0).toLocaleString()}</div>
+                                    <div style="font-weight:700; color:var(--danger); font-size:0.95rem; white-space:nowrap;">₹${Number(f.amount || 0).toLocaleString()}</div>
                                     <div style="width:1px; height:12px; background:var(--border);"></div>
                                     <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px;" title="${f.notes || ''}">${f.notes || 'Deduction'}</div>
                                 </div>
@@ -906,49 +906,49 @@ const SalaryManager = {
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-file-invoice-dollar" style="color:var(--primary);"></i>
-                            <span style="font-weight:800; color:var(--text-main);">Salary Detail Preview</span>
+                            <span style="font-weight:700; color:var(--text-main);">Salary Detail Preview</span>
                         </div>
                         <strong id="salary-preview-total" style="font-size:1rem; color:var(--success);">&#8377;${estimatedPayable.toLocaleString()}</strong>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px;">
                         <div style="grid-column:span 2; padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Attendance</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Attendance</span>
                             <strong style="font-size:0.82rem;">${attCounts.present || 0} P / ${attCounts.half || 0} H / ${attCounts.absent || 0} A / ${attCounts.holiday || 0} Hol</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Working Days</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Working Days</span>
                             <strong style="font-size:0.9rem;">${daysPresent}</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Earned Salary</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Earned Salary</span>
                             <strong style="font-size:0.9rem; color:var(--info);">&#8377;${Math.round(earnedSalaryPreview).toLocaleString()}</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Overtime</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Overtime</span>
                             <strong style="font-size:0.9rem; color:var(--success);">+&#8377;${monthlyOvertime.toLocaleString()}</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Deduction</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Deduction</span>
                             <strong style="font-size:0.9rem; color:var(--danger);">-&#8377;${monthlyPaymentDeduction.toLocaleString()}</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Advance</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Advance</span>
                             <strong id="salary-advance-deduction-preview" style="font-size:0.9rem; color:#6c5ce7;">-&#8377;0</strong>
                         </div>
                         <div style="padding:7px 8px; border-radius:10px; background:white; border:1px solid var(--border);">
-                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Hold</span>
+                            <span style="display:block; font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Hold</span>
                             <strong id="salary-hold-preview" style="font-size:0.9rem; color:var(--warning);">${holdReleaseAmount > 0 ? '+' : '-'}&#8377;${(holdReleaseAmount > 0 ? holdReleaseAmount : pendingHoldAmount).toLocaleString()}</strong>
                         </div>
                     </div>
                 </div>
 
                 <div style="margin-bottom:0.75rem; padding:10px 14px; border-radius:15px; background:linear-gradient(135deg, rgba(0,184,148,0.12), rgba(9,132,227,0.10)); border:1px solid rgba(0,184,148,0.25); text-align:center;">
-                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:900; text-transform:uppercase;">Net Payable Salary</div>
-                    <div id="salary-net-payable" style="font-size:1.8rem; line-height:1.05; font-weight:900; color:var(--success); margin-top:3px;">&#8377;${estimatedPayable.toLocaleString()}</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Net Payable Salary</div>
+                    <div id="salary-net-payable" style="font-size:1.8rem; line-height:1.05; font-weight:700; color:var(--success); margin-top:3px;">&#8377;${estimatedPayable.toLocaleString()}</div>
                 </div>
 
                 <button type="button" id="salary-preview-btn" class="btn-primary full-width" data-staff-id="${staffId}" data-advance-balance="${advBalance}" data-before-advance="${estimatedPayable}" onclick="SalaryManager.handleConfigSubmit('${staffId}', this)" 
-                    style="padding:12px; border-radius:14px; font-size:1rem; font-weight:800;">
+                    style="padding:12px; border-radius:14px; font-size:1rem; font-weight:700;">
                     Submit & Preview Slip
                 </button>
             </div>
@@ -1085,13 +1085,13 @@ const SalaryManager = {
                     </div>
                     <div class="input-group" style="margin-bottom:10px;">
                         <label>Amount (&#8377;)</label>
-                        <input type="number" id="salary-deduction-amount" required min="0.01" step="0.01" placeholder="0" style="width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; font-weight:800;">
+                        <input type="number" id="salary-deduction-amount" required min="0.01" step="0.01" placeholder="0" style="width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; font-weight:700;">
                     </div>
                     <div class="input-group" style="margin-bottom:14px;">
                         <label>Remarks</label>
                         <input type="text" id="salary-deduction-notes" placeholder="Reason" style="width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; font-weight:600;">
                     </div>
-                    <button type="submit" class="btn-primary full-width" style="padding:12px; border-radius:12px; font-weight:800;">Save Deduction</button>
+                    <button type="submit" class="btn-primary full-width" style="padding:12px; border-radius:12px; font-weight:700;">Save Deduction</button>
                 </form>
             </div>
         `;
@@ -1266,10 +1266,10 @@ const SalaryManager = {
                     ${slipHTML}
                 </div>
                 <div class="slip-actions" style="margin-top:0.7rem; display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-                    <button class="btn-outline" style="font-weight:800; padding:10px; border-radius:13px;" onclick="SalaryManager.showSalaryConfigModal('${staffId}', ${month}, ${year})">
+                    <button class="btn-outline" style="font-weight:700; padding:10px; border-radius:13px;" onclick="SalaryManager.showSalaryConfigModal('${staffId}', ${month}, ${year})">
                         <i class="fas fa-arrow-left"></i> Edit
                     </button>
-                    <button class="btn-primary" style="background:var(--success); font-weight:900; padding:10px; border-radius:13px;" onclick="SalaryManager.confirmGenerateSalary('${staffId}', ${month}, ${year}, ${advanceDeduction}, ${payload.releaseHold ? 'true' : 'false'})">
+                    <button class="btn-primary" style="background:var(--success); font-weight:700; padding:10px; border-radius:13px;" onclick="SalaryManager.confirmGenerateSalary('${staffId}', ${month}, ${year}, ${advanceDeduction}, ${payload.releaseHold ? 'true' : 'false'})">
                         <i class="fas fa-check-circle"></i> Generate Salary
                     </button>
                 </div>
@@ -1615,7 +1615,7 @@ const SalaryManager = {
             <div id="salary-slip-print" class="salary-slip" style="padding:16px; border:1px solid #ddd; border-radius:14px; background:#fff; color:#333; font-family:var(--app-font);">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid #eee;">
                     <div>
-                        <div style="font-size:0.78rem; color:var(--text-muted); font-weight:900; text-transform:uppercase;">Salary Slip</div>
+                        <div style="font-size:0.78rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Salary Slip</div>
                         <strong style="font-size:1rem; color:var(--primary);">${months[month]} ${year}</strong>
                     </div>
                     <div style="text-align:right; font-size:0.8rem; color:var(--text-muted);">
@@ -1649,18 +1649,18 @@ const SalaryManager = {
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
                     <div style="padding:9px 11px; border-radius:11px; background:var(--bg-main); border:1px solid var(--border);">
-                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:900; text-transform:uppercase;">Advance Deducted</div>
+                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Advance Deducted</div>
                         <strong style="font-size:0.95rem; color:var(--danger);">₹${(adj.advance || 0).toLocaleString()}</strong>
                     </div>
                     <div style="padding:9px 11px; border-radius:11px; background:var(--bg-main); border:1px solid var(--border);">
-                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:900; text-transform:uppercase;">Remaining Balance</div>
+                        <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Remaining Balance</div>
                         <strong style="font-size:0.95rem; color:#6c5ce7;">₹${advBalance.toLocaleString()}</strong>
                     </div>
                 </div>
 
                 <div style="margin-top:12px; padding:15px; background:linear-gradient(135deg, rgba(0,184,148,0.14), rgba(9,132,227,0.10)); border:2px solid rgba(0,184,148,0.28); border-radius:15px; text-align:center;">
-                    <span style="font-size:0.74rem; color:var(--text-muted); text-transform:uppercase; font-weight:900;">Net Payable Salary</span>
-                    <div style="font-size:2.35rem; line-height:1.02; font-weight:900; color:var(--success); margin-top:4px;">₹${finalSalary.toLocaleString()}</div>
+                    <span style="font-size:0.74rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Net Payable Salary</span>
+                    <div style="font-size:2.35rem; line-height:1.02; font-weight:700; color:var(--success); margin-top:4px;">₹${finalSalary.toLocaleString()}</div>
                     <p style="font-size:0.68rem; color:#777; margin:4px 0 0; font-style:italic;">${numberToWords(Math.round(finalSalary))} Only</p>
                 </div>
             </div>`;
@@ -1702,7 +1702,7 @@ const SalaryManager = {
                     ${businessAddress ? `<p style="margin:5px 0 0; font-size:1rem; font-weight:700; color:#555;">${businessAddress}</p>` : ''}
                     ${contactLine ? `<p style="margin:2px 0; color:#777; font-size:0.92rem;">${contactLine}</p>` : ''}
                     <div style="display:flex; justify-content:center; align-items:center; margin-top:18px;">
-                        <div style="display:inline-flex; align-items:center; justify-content:center; min-width:190px; padding:6px 18px; background:var(--primary); color:white; border-radius:20px; font-size:0.88rem; font-weight:800;">
+                        <div style="display:inline-flex; align-items:center; justify-content:center; min-width:190px; padding:6px 18px; background:var(--primary); color:white; border-radius:20px; font-size:0.88rem; font-weight:700;">
                             Salary Slip: ${months[month]} ${year}
                         </div>
                     </div>
@@ -1751,8 +1751,8 @@ const SalaryManager = {
 
                 <!-- Final Payout Section -->
                 <div style="position:relative; z-index:2; margin:38px 18px 10px; padding:28px; background:linear-gradient(135deg, #dffbf4, #eaf7ff); border:2px solid rgba(0,184,148,0.32); border-radius:16px; text-align:center; box-shadow:0 0 0 14px #fff;">
-                    <span style="font-size:1rem; color:var(--text-muted); text-transform:uppercase; font-weight:900; letter-spacing:1px;">Net Payable Salary</span>
-                    <div style="font-size:3.25rem; line-height:1.05; font-weight:900; color:var(--success); margin-top:8px;">₹${finalSalary.toLocaleString()}</div>
+                    <span style="font-size:1rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:1px;">Net Payable Salary</span>
+                    <div style="font-size:3.25rem; line-height:1.05; font-weight:700; color:var(--success); margin-top:8px;">₹${finalSalary.toLocaleString()}</div>
                     <p style="font-size:0.9rem; color:#777; margin-top:6px; font-style:italic;">(Rupees: ${numberToWords(Math.round(finalSalary))} Only)</p>
                 </div>
 

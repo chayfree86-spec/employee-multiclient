@@ -18,7 +18,7 @@
         installButton.type = 'button';
         installButton.id = 'pwa-install-btn';
         installButton.innerHTML = '<i class="fas fa-download"></i><span>Install App</span>';
-        installButton.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:3000;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;background:#3E2723;color:#fff;padding:12px 16px;font-weight:800;box-shadow:0 14px 34px rgba(62,39,35,.28);cursor:pointer;';
+        installButton.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:3000;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;background:#3E2723;color:#fff;padding:12px 16px;font-weight:700;box-shadow:0 14px 34px rgba(62,39,35,.28);cursor:pointer;';
         installButton.addEventListener('click', async () => {
             if (!deferredPrompt) return;
             deferredPrompt.prompt();

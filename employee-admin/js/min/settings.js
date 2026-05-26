@@ -402,7 +402,7 @@ const SettingsManager={_activeTab:"admin",currentSettings:null,loadBackendSettin
 
                 <div style="margin-top:2rem; padding:1.5rem; background:var(--bg-main); border-radius:12px; border:1px solid var(--border);">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <p style="font-size:0.8rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; margin:0; letter-spacing:0.5px;">INITIAL PERMISSIONS</p>
+                        <p style="font-size:0.8rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; margin:0; letter-spacing:0.5px;">INITIAL PERMISSIONS</p>
                         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; font-weight:700; color:var(--primary);">
                             <input type="checkbox" id="perm-all" onchange="SettingsManager.toggleAllPermissions(this.checked)"> <i class="fas fa-check-double" style="font-size:0.8rem;"></i> All Select
                         </label>

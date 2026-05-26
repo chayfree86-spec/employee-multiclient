@@ -100,12 +100,12 @@ const ReportsManager = {
                         <div style="display:flex; align-items:center; gap:12px;">
                             <img src="${staff.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(staff.name), '3E2723', 'fff', 35)}" alt="${staff.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(staff.name)}', '3E2723', 'fff', 35)" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
                             <div>
-                                <div style="font-weight:800;">${staff.name}</div>
+                                <div style="font-weight:700;">${staff.name}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted);">${staff.role || 'Staff'}</div>
                             </div>
                         </div>
                     </td>
-                    <td style="padding:1.2rem; font-weight:800; color:var(--primary);">${sectionTitle}</td>
+                    <td style="padding:1.2rem; font-weight:700; color:var(--primary);">${sectionTitle}</td>
                     <td style="padding:1.2rem; text-align:right;">${actionHtml}</td>
                 </tr>
                 <tr class="details-row active">
@@ -121,7 +121,7 @@ const ReportsManager = {
 
     renderExpandedFinancialDetail: (record, staff = null) => {
         if (!record) {
-            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">Backend payroll record not generated for this month.</div>';
+            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:700;">Backend payroll record not generated for this month.</div>';
         }
         const cards = [
             ['Base Salary', record.base_salary || 0, 'var(--primary)', staff],
@@ -132,8 +132,8 @@ const ReportsManager = {
             ['Net Payable', record.total_salary || 0, 'var(--success)']
         ].map(([label, amount, color, holdSource]) => `
             <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:1rem;">
-                <div style="font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">${label}</div>
-                <div style="font-size:1.2rem; font-weight:900; color:${color}; margin-top:5px;">${label === 'Base Salary' ? ReportsManager.formatSalaryAmountWithHold(amount, holdSource) : `₹${Number(amount || 0).toLocaleString()}`}</div>
+                <div style="font-size:0.68rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">${label}</div>
+                <div style="font-size:1.2rem; font-weight:700; color:${color}; margin-top:5px;">${label === 'Base Salary' ? ReportsManager.formatSalaryAmountWithHold(amount, holdSource) : `₹${Number(amount || 0).toLocaleString()}`}</div>
             </div>
         `).join('');
 
@@ -149,7 +149,7 @@ const ReportsManager = {
 
     renderExpandedAdvancesDetail: (entries) => {
         if (!entries.length) {
-            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">No backend advance records found for this month.</div>';
+            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:700;">No backend advance records found for this month.</div>';
         }
         return `
             <table style="width:100%; border-collapse:collapse; background:var(--bg-card); border-radius:14px; overflow:hidden;">
@@ -166,7 +166,7 @@ const ReportsManager = {
                         <tr style="border-bottom:1px solid var(--border);">
                             <td style="padding:1rem; font-weight:700;">${ReportsManager.formatReportDate(entry.date)}</td>
                             <td style="padding:1rem;"><span class="badge ${entry.type === 'paid' ? 'badge-danger' : 'badge-success'}">${entry.type.toUpperCase()}</span></td>
-                            <td style="padding:1rem; font-weight:900;">₹${Number(entry.amount || 0).toLocaleString()}</td>
+                            <td style="padding:1rem; font-weight:700;">₹${Number(entry.amount || 0).toLocaleString()}</td>
                             <td style="padding:1rem; color:var(--text-muted);">${entry.remark || '---'}</td>
                         </tr>
                     `).join('')}
@@ -181,7 +181,7 @@ const ReportsManager = {
         return `
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
                 <div>
-                    <div style="font-size:0.72rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Salary Slip Status</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Salary Slip Status</div>
                     <div style="margin-top:8px;">${statusMeta.html}</div>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -393,7 +393,7 @@ const ReportsManager = {
                             <div style="background:rgba(255,255,255,0.2); width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;">
                                 <i class="fas fa-chart-pie" style="color:var(--accent);"></i>
                             </div>
-                            <h1 style="font-size:1.8rem; font-weight:800; margin:0; letter-spacing:-0.5px;">Business Reports</h1>
+                            <h1 style="font-size:1.8rem; font-weight:700; margin:0; letter-spacing:-0.5px;">Business Reports</h1>
                         </div>
                         <p style="opacity:0.8; font-size:0.9rem; font-weight:500;">Analyze your cafe's performance and staff efficiency</p>
                     </div>
@@ -625,7 +625,7 @@ const ReportsManager = {
                         <td style="padding:1.2rem;"><span style="color:var(--success); font-weight:700;">${p}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
                         <td style="padding:1.2rem;"><span style="color:var(--danger); font-weight:700;">${a}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
                         <td style="padding:1.2rem;"><span style="color:var(--warning); font-weight:700;">${h}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
-                        <td style="padding:1.2rem; font-weight:800; background:rgba(0,0,0,0.02); color:var(--success);">${p + (h * 0.5)} <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
+                        <td style="padding:1.2rem; font-weight:700; background:rgba(0,0,0,0.02); color:var(--success);">${p + (h * 0.5)} <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
                         <td style="padding:1.2rem; text-align:right;">
                             <button class="btn-outline" onclick="event.stopPropagation(); ReportsManager.downloadSingleStaffCalendar('${s.id}', ${month}, ${year}, '${s.name}')" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="Download Calendar">
                                 <i class="fas fa-download"></i>
@@ -697,7 +697,7 @@ const ReportsManager = {
                         <td style="padding:1rem; color:var(--danger); font-weight:600;">-₹${(adj.advance || 0).toLocaleString()}</td>
                         <td style="padding:1rem; color:var(--warning); font-weight:600;">₹${Math.round(holdAmount).toLocaleString()}</td>
                         <td style="padding:1rem; font-weight:600;">₹${Math.round(earnedSalary).toLocaleString()}</td>
-                        <td style="padding:1rem; font-weight:800; color:var(--info); background:rgba(9,132,227,0.03);">₹${Math.round(payout).toLocaleString()}</td>
+                        <td style="padding:1rem; font-weight:700; color:var(--info); background:rgba(9,132,227,0.03);">₹${Math.round(payout).toLocaleString()}</td>
                         <td style="padding:1rem; text-align:right;">
                             <button class="btn-primary" onclick="SalaryManager.showSalarySlipUI('${s.id}', ${month}, ${year})" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="View Slip">
                                 <i class="fas fa-file-invoice-dollar"></i> Slip
@@ -733,7 +733,7 @@ const ReportsManager = {
                     return d.getMonth() === month && d.getFullYear() === year;
                 }).forEach(a => logs.push({ ...a, staffName: s.name }));
             });
-            content.innerHTML = `<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:var(--bg-main);"><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Date</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Staff</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Type</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Amount</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Remark</th></tr></thead><tbody>${logs.map(l => `<tr><td style="padding:1.2rem;">${new Date(l.date).toLocaleDateString()}</td><td style="padding:1.2rem; font-weight:700;">${l.staffName}</td><td style="padding:1.2rem;"><span class="badge ${l.type === 'paid' ? 'badge-danger' : 'badge-success'}">${l.type.toUpperCase()}</span></td><td style="padding:1.2rem; font-weight:800;">₹${l.amount.toLocaleString()}</td><td style="padding:1.2rem; color:var(--text-muted); font-size:0.85rem;">${l.remark || '---'}</td></tr>`).join('')}</tbody></table>`;
+            content.innerHTML = `<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:var(--bg-main);"><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Date</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Staff</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Type</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Amount</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Remark</th></tr></thead><tbody>${logs.map(l => `<tr><td style="padding:1.2rem;">${new Date(l.date).toLocaleDateString()}</td><td style="padding:1.2rem; font-weight:700;">${l.staffName}</td><td style="padding:1.2rem;"><span class="badge ${l.type === 'paid' ? 'badge-danger' : 'badge-success'}">${l.type.toUpperCase()}</span></td><td style="padding:1.2rem; font-weight:700;">₹${l.amount.toLocaleString()}</td><td style="padding:1.2rem; color:var(--text-muted); font-size:0.85rem;">${l.remark || '---'}</td></tr>`).join('')}</tbody></table>`;
         } else if (type === 'slips') {
             const rows = staff.map(s => {
                 const payrollRecord = payrollByEmployee[String(s.id)];

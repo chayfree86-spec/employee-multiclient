@@ -1,4 +1,4 @@
-﻿const StaffManager = {
+const StaffManager = {
     _renderToken: 0,
     _isSavingStaff: false,
     currentStaffList: [],
@@ -116,15 +116,15 @@
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
                 <div style="padding:10px; border-radius:12px; background:rgba(214, 48, 49, 0.06); border:1px solid rgba(214, 48, 49, 0.2);">
                     <div style="font-size:0.7rem; font-weight:700; color:var(--danger); text-transform:uppercase;">Advance Balance</div>
-                    <div style="font-size:1rem; font-weight:800; color:var(--danger);">&#8377;${summary.loanBalance.toLocaleString()}</div>
+                    <div style="font-size:1rem; font-weight:700; color:var(--danger);">&#8377;${summary.loanBalance.toLocaleString()}</div>
                 </div>
                 <div style="padding:10px; border-radius:12px; background:rgba(9, 132, 227, 0.06); border:1px solid rgba(9, 132, 227, 0.2);">
                     <div style="font-size:0.7rem; font-weight:700; color:var(--info); text-transform:uppercase;">Debit</div>
-                    <div style="font-size:1rem; font-weight:800; color:var(--info);">&#8377;${summary.totalLoanAdded.toLocaleString()}</div>
+                    <div style="font-size:1rem; font-weight:700; color:var(--info);">&#8377;${summary.totalLoanAdded.toLocaleString()}</div>
                 </div>
                 <div style="padding:10px; border-radius:12px; background:rgba(0, 184, 148, 0.06); border:1px solid rgba(0, 184, 148, 0.2);">
                     <div style="font-size:0.7rem; font-weight:700; color:var(--success); text-transform:uppercase;">Credit</div>
-                    <div style="font-size:1rem; font-weight:800; color:var(--success);">&#8377;${summary.totalLoanReceived.toLocaleString()}</div>
+                    <div style="font-size:1rem; font-weight:700; color:var(--success);">&#8377;${summary.totalLoanReceived.toLocaleString()}</div>
                 </div>
             </div>
         `;
@@ -839,7 +839,7 @@
                             <div style="background:var(--bg-main); padding:1.25rem; border-radius:15px; border:1px solid var(--border);">
                                 <label style="font-size:0.65rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Earn Salary</label>
                                 <h4 style="font-size:1.2rem; color:var(--info); margin-top:4px;">&#8377;${earnedSalaryAfterHold.toLocaleString()}</h4>
-                                ${attendanceCountBadges ? `<div style="font-size:0.68rem; font-weight:800; margin-top:4px; display:flex; gap:7px; align-items:center;">${attendanceCountBadges}</div>` : ''}
+                                ${attendanceCountBadges ? `<div style="font-size:0.68rem; font-weight:700; margin-top:4px; display:flex; gap:7px; align-items:center;">${attendanceCountBadges}</div>` : ''}
                                 ${holdDeductionAmount > 0 ? `<div style="font-size:0.74rem; color:var(--danger); font-weight:700; margin-top:5px;">Hold: -&#8377;${holdDeductionAmount.toLocaleString()}</div>` : ''}
                             </div>
                             <div style="background:${hasAnyHold ? 'rgba(214, 48, 49, 0.05)' : 'var(--bg-main)'}; padding:1.25rem; border-radius:15px; border:1px solid ${hasAnyHold ? 'var(--danger)' : 'var(--border)'}; cursor:pointer; transition: all 0.2s ease;" 
@@ -889,15 +889,15 @@
                 return `
                             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-top:1.25rem;">
                                 <div style="background:rgba(108, 92, 231, 0.07); border:1px solid rgba(108, 92, 231, 0.22); padding:1rem; border-radius:14px;">
-                                    <label style="font-size:0.65rem; color:#6c5ce7; font-weight:800; text-transform:uppercase;">Balance</label>
+                                    <label style="font-size:0.65rem; color:#6c5ce7; font-weight:700; text-transform:uppercase;">Balance</label>
                                     <h4 style="font-size:1.35rem; color:#6c5ce7; margin-top:4px;">&#8377;${balance.toLocaleString()}</h4>
                                 </div>
                                 <div style="background:rgba(214, 48, 49, 0.06); border:1px solid rgba(214, 48, 49, 0.18); padding:1rem; border-radius:14px;">
-                                    <label style="font-size:0.65rem; color:var(--danger); font-weight:800; text-transform:uppercase;">Debit Given</label>
+                                    <label style="font-size:0.65rem; color:var(--danger); font-weight:700; text-transform:uppercase;">Debit Given</label>
                                     <h4 style="font-size:1.35rem; color:var(--danger); margin-top:4px;">&#8377;${debitTotal.toLocaleString()}</h4>
                                 </div>
                                 <div style="background:rgba(0, 184, 148, 0.06); border:1px solid rgba(0, 184, 148, 0.18); padding:1rem; border-radius:14px;">
-                                    <label style="font-size:0.65rem; color:var(--success); font-weight:800; text-transform:uppercase;">Credit Received</label>
+                                    <label style="font-size:0.65rem; color:var(--success); font-weight:700; text-transform:uppercase;">Credit Received</label>
                                     <h4 style="font-size:1.35rem; color:var(--success); margin-top:4px;">&#8377;${creditTotal.toLocaleString()}</h4>
                                 </div>
                             </div>
@@ -921,7 +921,7 @@
                                                 <tr>
                                                     <td data-label="Date"><span class="ledger-cell-value">${entry.date ? new Date(`${entry.date}T00:00:00`).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</span></td>
                                                     <td data-label="Type"><span class="ledger-cell-value"><span class="badge ${meta.badgeClass}" style="font-size:0.65rem; padding:4px 9px;">${meta.label}</span></span></td>
-                                                    <td data-label="Amount" style="font-weight:800; color:${isCredit ? 'var(--success)' : 'var(--danger)'};"><span class="ledger-cell-value">${isCredit ? '+' : '-'}&#8377;${Number(entry.amount || 0).toLocaleString()}</span></td>
+                                                    <td data-label="Amount" style="font-weight:700; color:${isCredit ? 'var(--success)' : 'var(--danger)'};"><span class="ledger-cell-value">${isCredit ? '+' : '-'}&#8377;${Number(entry.amount || 0).toLocaleString()}</span></td>
                                                     <td data-label="Remark" style="font-size:0.8rem; color:var(--text-muted); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeAttr(entry.remark)}"><span class="ledger-cell-value">${entry.remark || '-'}</span></td>
                                                     <td data-label="Action">
                                                         <div style="display:flex; gap:3px;">
@@ -1175,7 +1175,7 @@
                         <img id="staff-photo-preview" src="" alt="Selected staff photo preview" style="width:100%; height:100%; object-fit:cover; display:none;">
                         <div id="photo-placeholder" style="text-align:center; color:var(--primary);">
                             <i class="fa-solid fa-camera" style="font-size:2rem; display:block; margin-bottom:5px;"></i>
-                            <span style="font-size:0.7rem; font-weight:800; letter-spacing:0.5px;">ADD PHOTO</span>
+                            <span style="font-size:0.7rem; font-weight:700; letter-spacing:0.5px;">ADD PHOTO</span>
                         </div>
                     </div>
                     <div style="margin-top:12px; display:flex; justify-content:center; gap:10px;">
@@ -1884,11 +1884,11 @@
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1rem;">
                     <div style="padding:12px; border-radius:12px; background:rgba(214, 48, 49, 0.06); border:1px solid rgba(214, 48, 49, 0.2);">
                         <div style="font-size:0.75rem; font-weight:700; color:var(--danger); text-transform:uppercase;">Loan Balance</div>
-                        <div style="font-size:1.1rem; font-weight:800; color:var(--danger);">&#8377;${ledger.loanBalance.toLocaleString()}</div>
+                        <div style="font-size:1.1rem; font-weight:700; color:var(--danger);">&#8377;${ledger.loanBalance.toLocaleString()}</div>
                     </div>
                     <div style="padding:12px; border-radius:12px; background:rgba(0, 184, 148, 0.06); border:1px solid rgba(0, 184, 148, 0.2);">
                         <div style="font-size:0.75rem; font-weight:700; color:var(--success); text-transform:uppercase;">Saving Balance</div>
-                        <div style="font-size:1.1rem; font-weight:800; color:var(--success);">&#8377;${ledger.savingBalance.toLocaleString()}</div>
+                        <div style="font-size:1.1rem; font-weight:700; color:var(--success);">&#8377;${ledger.savingBalance.toLocaleString()}</div>
                     </div>
                 </div>
                 <div class="input-group">

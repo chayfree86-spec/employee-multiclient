@@ -445,7 +445,7 @@ window.PhotoHelper = {
             <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
                 <rect width="${size}" height="${size}" rx="${Math.round(size * 0.22)}" fill="#${bg}" />
                 <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
-                    font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#${safeColor}">
+                    font-family="Mulish" font-size="${fontSize}" font-weight="700" fill="#${safeColor}">
                     ${initials}
                 </text>
             </svg>

@@ -1,7 +1,11 @@
-const CACHE_NAME = 'employee-superadmin-v3';
+const CACHE_NAME = 'employee-superadmin-v4';
 const APP_SHELL = [
   '/employee-admin/superadmin/index.html',
   '/employee-admin/superadmin/manifest.webmanifest',
+  '/employee-admin/assets/fonts/mulish/Mulish-400.ttf',
+  '/employee-admin/assets/fonts/mulish/Mulish-500.ttf',
+  '/employee-admin/assets/fonts/mulish/Mulish-600.ttf',
+  '/employee-admin/assets/fonts/mulish/Mulish-700.ttf',
   '/public/images/logo.png'
 ];
 

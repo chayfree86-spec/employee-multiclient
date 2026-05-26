@@ -116,18 +116,18 @@ const AttendanceManager={currentDate:null,saveDebounceMs:450,_saveTimer:null,_pe
                         </svg>
 
                         <div style="text-align:center; z-index:2;">
-                            <div id="sync-counter" style="font-size:5rem; font-weight:900; color:var(--primary); line-height:1; font-family:var(--app-font);">0</div>
-                            <div style="font-size:0.85rem; color:var(--text-muted); font-weight:800; text-transform:uppercase; letter-spacing:3px; margin-top:5px;">Process</div>
+                            <div id="sync-counter" style="font-size:5rem; font-weight:700; color:var(--primary); line-height:1; font-family:var(--app-font);">0</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:3px; margin-top:5px;">Process</div>
                         </div>
                     </div>
 
                     <div style="height:80px; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:center; perspective: 1000px;">
-                        <div id="syncing-name" style="font-size:2.2rem; font-weight:800; color:var(--primary); font-family:var(--app-font); opacity:0; transform:translateY(20px) rotateX(-20deg); transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">Initializing...</div>
+                        <div id="syncing-name" style="font-size:2.2rem; font-weight:700; color:var(--primary); font-family:var(--app-font); opacity:0; transform:translateY(20px) rotateX(-20deg); transition:all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">Initializing...</div>
                     </div>
 
                     <div style="display:inline-flex; align-items:center; gap:15px; background:var(--bg-main); padding:1.25rem 3.5rem; border-radius:100px; border:1px solid var(--border); box-shadow:0 15px 45px rgba(0,0,0,0.08);">
                         <i class="fas ${l}" style="color:${n}; font-size:1.5rem;"></i>
-                        <span style="font-weight:800; color:var(--text-main); font-size:1.2rem;">Marking <b>${r}</b></span>
+                        <span style="font-weight:700; color:var(--text-main); font-size:1.2rem;">Marking <b>${r}</b></span>
                     </div>
                 </div>
 

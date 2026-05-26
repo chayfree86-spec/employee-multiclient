@@ -1,55 +1,37 @@
-@media (min-width: 901px) {
 @font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-400.ttf') format('truetype');
+    font-family: 'Mulish';
+    src: url('assets/fonts/mulish/Mulish-400.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 
 @font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-500.ttf') format('truetype');
+    font-family: 'Mulish';
+    src: url('assets/fonts/mulish/Mulish-500.ttf') format('truetype');
     font-weight: 500;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 
 @font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-600.ttf') format('truetype');
+    font-family: 'Mulish';
+    src: url('assets/fonts/mulish/Mulish-600.ttf') format('truetype');
     font-weight: 600;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 
 @font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-700.ttf') format('truetype');
+    font-family: 'Mulish';
+    src: url('assets/fonts/mulish/Mulish-700.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-800.ttf') format('truetype');
-    font-weight: 800;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Google Sans Flex';
-    src: url('assets/fonts/google-sans-flex/GoogleSansFlex-900.ttf') format('truetype');
-    font-weight: 900;
-    font-style: normal;
-    font-display: swap;
-}
+    font-display: block;
 }
 
 :root {
-    --app-font: 'Google Sans Flex', 'Google Sans', 'Product Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --app-font: 'Mulish';
     /* Premium Cafe Theme */
     --primary: #3E2723;
     --primary-light: #5B4037;
@@ -142,7 +124,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 0 14px;
-    font-weight: 800;
+    font-weight:700;
     font-size: 0.92rem;
     cursor: pointer;
     box-shadow: var(--shadow);
@@ -191,7 +173,7 @@
 }
 
 .profile-month-year span {
-    font-weight: 900;
+    font-weight:700;
     color: var(--text-main);
 }
 
@@ -254,7 +236,7 @@
     border: 0;
     background: transparent;
     color: var(--info);
-    font-weight: 800;
+    font-weight:700;
     cursor: pointer;
 }
 
@@ -279,7 +261,7 @@
     border-radius: 13px;
     background: var(--bg-card);
     color: var(--primary);
-    font-weight: 900;
+    font-weight:700;
     box-shadow: 0 8px 20px rgba(26, 18, 16, 0.08);
 }
 
@@ -296,12 +278,12 @@
     margin-top: 2px;
     color: var(--text-muted);
     font-size: 0.72rem;
-    font-weight: 800;
+    font-weight:700;
 }
 
 .attendance-status-count {
     font-size: 0.72rem;
-    font-weight: 900;
+    font-weight:700;
     margin-left: 4px;
     opacity: 0.95;
 }
@@ -329,7 +311,7 @@
 .select-options[data-for="report-month"] .select-option,
 .select-options[data-for="report-year"] .select-option {
     border-radius: 10px;
-    font-weight: 800;
+    font-weight:700;
     color: var(--text-main);
 }
 
@@ -343,7 +325,15 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: var(--app-font);
+    font-family: var(--app-font) !important;
+    font-synthesis: none;
+}
+
+[style*="font-weight:700"],
+[style*="font-weight:700"],
+[style*="font-weight:700"],
+[style*="font-weight:700"] {
+    font-weight: 700 !important;
 }
 
 body {
@@ -749,7 +739,7 @@ h3,
     color: var(--text-main);
     font-family: var(--app-font);
     font-size: 1.08rem;
-    font-weight: 800;
+    font-weight:700;
     white-space: nowrap;
 }
 
@@ -815,7 +805,7 @@ h3,
 
 .stat-value {
     font-size: 1.75rem;
-    font-weight: 800;
+    font-weight:700;
     color: var(--text-main);
 }
 
@@ -1326,7 +1316,7 @@ tr:hover td {
 .date-selection-box .date-input,
 .date-selection-box .flatpickr-input {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
-    font-weight: 800 !important;
+    font-weight:700 !important;
 }
 
 .date-selection-box #weekday-display {
@@ -1389,14 +1379,14 @@ tr:hover td {
 .attendance-calendar .flatpickr-current-month {
     padding-top: 4px;
     font-size: 1rem;
-    font-weight: 800;
+    font-weight:700;
 }
 
 .attendance-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
 .attendance-calendar .flatpickr-current-month input.cur-year {
     border-radius: 10px;
     color: var(--text-main);
-    font-weight: 800;
+    font-weight:700;
 }
 
 .attendance-calendar .flatpickr-months .flatpickr-prev-month,
@@ -1453,7 +1443,7 @@ tr:hover td {
 .attendance-calendar span.flatpickr-weekday {
     color: var(--text-muted);
     font-size: 0.72rem;
-    font-weight: 800;
+    font-weight:700;
     letter-spacing: 0;
     text-transform: uppercase;
 }
@@ -1532,7 +1522,7 @@ tr:hover td {
 .select-trigger:after {
     content: '\f107';
     font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
+    font-weight:700;
     font-size: 0.8rem;
     color: var(--text-muted);
 }
@@ -2797,7 +2787,7 @@ tbody tr td:last-child {
     background: var(--stat-bg);
     color: var(--stat-color);
     border: 1px solid var(--stat-border);
-    font-weight: 900;
+    font-weight:700;
 }
 
 .attendance-stat-pill i {
@@ -2816,7 +2806,7 @@ tbody tr td:last-child {
 .attendance-stat-pill strong {
     font-size: 0.98rem;
     line-height: 1;
-    font-weight: 900;
+    font-weight:700;
 }
 
 .attendance-stat-pill.stat-present {
@@ -2859,7 +2849,7 @@ tbody tr td:last-child {
     border: 1px solid transparent;
     background: var(--bg-main);
     color: var(--text-main);
-    font-weight: 800;
+    font-weight:700;
     font-size: 0.9rem;
     box-shadow: none;
 }
@@ -3020,7 +3010,7 @@ tbody tr td:last-child {
     margin: 0 0 8px;
     font-size: 1.15rem;
     line-height: 1.25;
-    font-weight: 800;
+    font-weight:700;
 }
 
 .app-alert-highlight {
@@ -3036,7 +3026,7 @@ tbody tr td:last-child {
     border: 1px solid var(--alert-border);
     font-size: 1.05rem;
     line-height: 1.1;
-    font-weight: 900;
+    font-weight:700;
     overflow-wrap: anywhere;
     box-shadow: 0 8px 18px color-mix(in srgb, var(--alert-color, var(--primary)) 14%, transparent);
 }
@@ -3088,7 +3078,7 @@ tbody tr td:last-child {
 .app-alert-stat b {
     font-size: 0.98rem;
     line-height: 1;
-    font-weight: 900;
+    font-weight:700;
 }
 
 .app-alert-stat-success {
@@ -3122,7 +3112,7 @@ tbody tr td:last-child {
     padding: 0.85rem 1rem;
     background: var(--alert-color, var(--primary));
     color: #fff;
-    font-weight: 800;
+    font-weight:700;
     cursor: pointer;
     box-shadow: 0 10px 24px color-mix(in srgb, var(--alert-color, var(--primary)) 24%, transparent);
 }
@@ -3245,7 +3235,7 @@ tbody tr td:last-child {
 .theme-option-card.active::before {
     content: '\f058';
     font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
+    font-weight:700;
     position: absolute;
     top: 8px;
     right: 8px;
@@ -4164,7 +4154,7 @@ tbody tr td:last-child {
     #report-content > table > tbody > tr:not(.attendance-row):not(.details-row) > td:not(:first-child):not(:last-child)::before {
         color: var(--text-muted);
         font-size: 0.68rem;
-        font-weight: 800;
+        font-weight:700;
         text-transform: uppercase;
         letter-spacing: 0.03em;
         flex: 1 1 auto;
@@ -4420,7 +4410,7 @@ tbody tr td:last-child {
         background: transparent;
         text-decoration: none;
         font-size: 0.68rem;
-        font-weight: 800;
+        font-weight:700;
         cursor: pointer;
     }
 
@@ -4497,7 +4487,7 @@ tbody tr td:last-child {
         color: var(--text-main);
         font-family: var(--app-font);
         font-size: 0.98rem;
-        font-weight: 900;
+        font-weight:700;
         letter-spacing: 0;
     }
 
@@ -4513,7 +4503,7 @@ tbody tr td:last-child {
         color: var(--text-main);
         background: color-mix(in srgb, var(--bg-main) 72%, var(--bg-card));
         text-decoration: none;
-        font-weight: 900;
+        font-weight:700;
         cursor: pointer;
         box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
     }
@@ -4886,7 +4876,7 @@ tbody tr td:last-child {
         flex: 0 0 auto;
         color: var(--text-muted);
         font-size: 0.72rem;
-        font-weight: 800;
+        font-weight:700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         text-align: left;
@@ -5417,7 +5407,7 @@ tbody tr td:last-child {
         content: attr(data-label);
         color: var(--text-muted);
         font-size: 0.68rem;
-        font-weight: 800;
+        font-weight:700;
         letter-spacing: 0.03em;
         text-transform: uppercase;
         text-align: left;
@@ -5486,7 +5476,7 @@ tbody tr td:last-child {
         background: linear-gradient(135deg, var(--bg-card), color-mix(in srgb, var(--primary) 3%, var(--bg-card))) !important;
         box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07) !important;
         font-size: 0.92rem !important;
-        font-weight: 800 !important;
+        font-weight:700 !important;
     }
 
     #header-profile-select-wrap .select-trigger span {
@@ -5684,7 +5674,7 @@ tbody tr td:last-child {
         display: block !important;
         max-width: 100% !important;
         font-size: 0.58rem !important;
-        font-weight: 900 !important;
+        font-weight:700 !important;
         line-height: 1.05 !important;
         letter-spacing: 0 !important;
         color: inherit !important;

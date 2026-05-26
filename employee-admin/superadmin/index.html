@@ -10,10 +10,45 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Superadmin">
     <link rel="manifest" href="manifest.webmanifest">
+    <link rel="preload" href="../assets/fonts/mulish/Mulish-400.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="preload" href="../assets/fonts/mulish/Mulish-600.ttf" as="font" type="font/ttf" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @font-face {
+            font-family: 'Mulish';
+            src: url('../assets/fonts/mulish/Mulish-400.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Mulish';
+            src: url('../assets/fonts/mulish/Mulish-500.ttf') format('truetype');
+            font-weight: 500;
+            font-style: normal;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Mulish';
+            src: url('../assets/fonts/mulish/Mulish-600.ttf') format('truetype');
+            font-weight: 600;
+            font-style: normal;
+            font-display: block;
+        }
+
+        @font-face {
+            font-family: 'Mulish';
+            src: url('../assets/fonts/mulish/Mulish-700.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: block;
+        }
+
         :root {
+            --superadmin-font: 'Mulish';
             --bg: #F7F5F2;
             --panel: #fff;
             --panel-soft: #fbfaf8;
@@ -38,10 +73,22 @@
 
         * { box-sizing: border-box; }
 
+        *, *::before, *::after {
+            font-family: var(--superadmin-font) !important;
+            font-synthesis: none;
+        }
+
+        [style*="font-weight:700"],
+        [style*="font-weight:700"],
+        [style*="font-weight:700"],
+        [style*="font-weight:700"] {
+            font-weight: 700 !important;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: var(--superadmin-font);
             color: var(--ink);
             background:
                 radial-gradient(circle at 20% 0%, rgba(255,255,255,.9), transparent 34rem),
@@ -156,7 +203,7 @@
             align-items: center;
             gap: 12px;
             font-size: 20px;
-            font-weight: 800;
+            font-weight:700;
         }
 
         .brand-badge {
@@ -211,7 +258,7 @@
         .eyebrow {
             margin: 0 0 8px;
             font-size: 12px;
-            font-weight: 800;
+            font-weight:700;
             color: var(--brand);
             text-transform: uppercase;
             letter-spacing: .08em;
@@ -326,7 +373,7 @@
             border-radius: 999px;
             color: #463f38;
             font-size: 13px;
-            font-weight: 800;
+            font-weight:700;
             background: #fff;
         }
 
@@ -352,7 +399,7 @@
             color: #645b52;
             background: rgba(251, 250, 248, .96);
             font-size: 11px;
-            font-weight: 800;
+            font-weight:700;
             text-align: left;
             text-transform: uppercase;
         }
@@ -391,12 +438,12 @@
             border-radius: 999px;
             color: #fff;
             font-size: 13px;
-            font-weight: 800;
+            font-weight:700;
             background: linear-gradient(145deg, #332923, #705744);
             box-shadow: 0 8px 18px rgba(57, 43, 34, .18);
         }
 
-        .user-name { font-weight: 800; }
+        .user-name { font-weight:700; }
         .user-sub { margin-top: 3px; color: var(--muted); font-size: 12px; }
 
         .status {
@@ -406,7 +453,7 @@
             padding: 6px 10px;
             border-radius: 999px;
             font-size: 12px;
-            font-weight: 800;
+            font-weight:700;
             text-transform: capitalize;
         }
 
@@ -600,7 +647,7 @@
 
         .calendar-title {
             font-size: 14px;
-            font-weight: 800;
+            font-weight:700;
         }
 
         .calendar-nav {
@@ -630,7 +677,7 @@
             margin-bottom: 6px;
             color: var(--muted);
             font-size: 11px;
-            font-weight: 800;
+            font-weight:700;
             text-align: center;
         }
 
@@ -1018,7 +1065,7 @@
                 content: attr(data-label);
                 color: var(--muted);
                 font-size: 10px;
-                font-weight: 800;
+                font-weight:700;
                 letter-spacing: .04em;
                 text-align: left;
                 text-transform: uppercase;
@@ -1142,7 +1189,7 @@
                 background: transparent;
                 text-decoration: none;
                 font-size: 10px;
-                font-weight: 900;
+                font-weight:700;
                 letter-spacing: 0;
                 white-space: nowrap;
             }

@@ -2,7 +2,7 @@ const ApiClient={_workingBaseUrl:null,get configuredApiRoot(){const e=window.Emp
             <svg xmlns="http://www.w3.org/2000/svg" width="${a}" height="${a}" viewBox="0 0 ${a} ${a}">
                 <rect width="${a}" height="${a}" rx="${Math.round(a*.22)}" fill="#${s}" />
                 <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
-                    font-family="Arial, sans-serif" font-size="${i}" font-weight="700" fill="#${r}">
+                    font-family="Mulish" font-size="${i}" font-weight="700" fill="#${r}">
                     ${o}
                 </text>
             </svg>
