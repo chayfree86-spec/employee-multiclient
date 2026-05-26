@@ -3,6 +3,7 @@
 namespace EmployeeApi\Controllers;
 
 use EmployeeApi\Models\SuperadminModel;
+use EmployeeApi\Models\SettingsModel;
 use EmployeeApi\Models\UserModel;
 
 class SuperadminController extends BaseApiController
@@ -74,12 +75,22 @@ class SuperadminController extends BaseApiController
         $payload['role'] = $payload['role'] ?? 'admin';
         $payload['status'] = $payload['status'] ?? 'active';
 
+        $db = \Config\Database::connect();
+        $db->transStart();
+
         if (!$model->insert($payload)) {
+            $db->transRollback();
             return $this->respondError('Failed to create user', 400, $model->errors());
         }
 
         $id = (int) $model->getInsertID();
-        $this->seedSettingsForUser($id);
+        $this->seedSettingsForUser($id, $payload);
+        $db->transComplete();
+
+        if (!$db->transStatus()) {
+            return $this->respondError('Failed to create user settings', 500);
+        }
+
         $user = $model->find($id);
         unset($user['password']);
 
@@ -227,16 +238,78 @@ class SuperadminController extends BaseApiController
             ->first();
     }
 
-    private function seedSettingsForUser(int $userId): void
+    private function seedSettingsForUser(int $userId, array $user): void
     {
         $db = \Config\Database::connect();
-        $rows = $db->table('settings')->where('user_id', 1)->get()->getResultArray();
+        $rows = $this->getDefaultSettingsRows();
         foreach ($rows as $row) {
             unset($row['id']);
             $row['user_id'] = $userId;
             $row['created_at'] = date('Y-m-d H:i:s');
             $row['updated_at'] = date('Y-m-d H:i:s');
             $db->table('settings')->ignore(true)->insert($row);
+        }
+
+        $this->syncUserBrandingSettings($userId, $user);
+    }
+
+    private function getDefaultSettingsRows(): array
+    {
+        $db = \Config\Database::connect();
+        $rows = $db->table('settings')->where('user_id', 1)->get()->getResultArray();
+
+        if ($rows !== []) {
+            return $rows;
+        }
+
+        $settings = (new SettingsModel())->getDefaultSettings();
+        return array_map(
+            static fn ($name, $value) => [
+                'setting_name' => $name,
+                'setting_value' => $value,
+            ],
+            array_keys($settings),
+            $settings
+        );
+    }
+
+    private function syncUserBrandingSettings(int $userId, array $user): void
+    {
+        $brandingSettings = [
+            'cafe_name' => $user['business_name'] ?? $user['owner_name'] ?? $user['username'] ?? '',
+            'business_phone' => $user['mobile'] ?? '',
+            'business_email' => $user['email'] ?? '',
+            'business_address' => $user['address'] ?? '',
+        ];
+
+        $db = \Config\Database::connect();
+        $now = date('Y-m-d H:i:s');
+        foreach ($brandingSettings as $name => $value) {
+            $value = trim((string) $value);
+            if ($value === '') {
+                continue;
+            }
+
+            $existing = $db->table('settings')
+                ->where('user_id', $userId)
+                ->where('setting_name', $name)
+                ->get()
+                ->getRowArray();
+
+            if ($existing) {
+                $db->table('settings')->where('id', $existing['id'])->update([
+                    'setting_value' => $value,
+                    'updated_at' => $now,
+                ]);
+            } else {
+                $db->table('settings')->insert([
+                    'user_id' => $userId,
+                    'setting_name' => $name,
+                    'setting_value' => $value,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            }
         }
     }
 }

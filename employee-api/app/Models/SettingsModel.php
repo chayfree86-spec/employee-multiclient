@@ -54,6 +54,11 @@ class SettingsModel extends Model
         'color_deduction' => '#d63031',
     ];
 
+    public function getDefaultSettings(): array
+    {
+        return $this->defaultSettings;
+    }
+
     /**
      * Load all settings into cache (once per request).
      */
