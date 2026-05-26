@@ -84,7 +84,18 @@ class SuperadminController extends BaseApiController
         }
 
         $id = (int) $model->getInsertID();
-        $this->seedSettingsForUser($id, $payload);
+        try {
+            $this->seedSettingsForUser($id, $payload);
+        } catch (\Throwable $error) {
+            log_message('error', 'Failed to seed settings for new user {userId}: {message}', [
+                'userId' => $id,
+                'message' => $error->getMessage(),
+            ]);
+            $db->transRollback();
+            return $this->respondError('Failed to create user settings', 500, [
+                'reason' => 'settings_seed_failed',
+            ]);
+        }
         $db->transComplete();
 
         if (!$db->transStatus()) {
@@ -241,6 +252,11 @@ class SuperadminController extends BaseApiController
     private function seedSettingsForUser(int $userId, array $user): void
     {
         $db = \Config\Database::connect();
+        if (!$this->hasTenantSettingsSchema($db)) {
+            log_message('warning', 'Skipping tenant settings seed because settings table is not tenant-ready.');
+            return;
+        }
+
         $rows = $this->getDefaultSettingsRows();
         foreach ($rows as $row) {
             unset($row['id']);
@@ -253,10 +269,26 @@ class SuperadminController extends BaseApiController
         $this->syncUserBrandingSettings($userId, $user);
     }
 
+    private function hasTenantSettingsSchema($db): bool
+    {
+        if (!$db->fieldExists('user_id', 'settings')) {
+            return false;
+        }
+
+        $indexes = $db->query("SHOW INDEX FROM settings WHERE Key_name = 'user_setting'")
+            ->getResultArray();
+
+        return $indexes !== [];
+    }
+
     private function getDefaultSettingsRows(): array
     {
         $db = \Config\Database::connect();
-        $rows = $db->table('settings')->where('user_id', 1)->get()->getResultArray();
+        $rows = $db->table('settings')
+            ->select('setting_name, setting_value')
+            ->where('user_id', 1)
+            ->get()
+            ->getResultArray();
 
         if ($rows !== []) {
             return $rows;
@@ -275,6 +307,11 @@ class SuperadminController extends BaseApiController
 
     private function syncUserBrandingSettings(int $userId, array $user): void
     {
+        $db = \Config\Database::connect();
+        if (!$this->hasTenantSettingsSchema($db)) {
+            return;
+        }
+
         $brandingSettings = [
             'cafe_name' => $user['business_name'] ?? $user['owner_name'] ?? $user['username'] ?? '',
             'business_phone' => $user['mobile'] ?? '',
@@ -282,7 +319,6 @@ class SuperadminController extends BaseApiController
             'business_address' => $user['address'] ?? '',
         ];
 
-        $db = \Config\Database::connect();
         $now = date('Y-m-d H:i:s');
         foreach ($brandingSettings as $name => $value) {
             $value = trim((string) $value);
