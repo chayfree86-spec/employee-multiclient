@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-superadmin-v5';
+const CACHE_NAME = 'employee-superadmin-v6';
 const APP_SHELL = [
   '/employee-admin/superadmin/index.html',
   '/employee-admin/superadmin/manifest.webmanifest',
@@ -6,6 +6,10 @@ const APP_SHELL = [
   '/employee-admin/assets/fonts/mulish/Mulish-500.ttf',
   '/employee-admin/assets/fonts/mulish/Mulish-600.ttf',
   '/employee-admin/assets/fonts/mulish/Mulish-700.ttf',
+  '/employee-admin/assets/fontawesome/css/all.min.css',
+  '/employee-admin/assets/fontawesome/webfonts/fa-solid-900.woff2',
+  '/employee-admin/assets/fontawesome/webfonts/fa-regular-400.woff2',
+  '/employee-admin/assets/fontawesome/webfonts/fa-brands-400.woff2',
   '/public/images/logo.png'
 ];
 
