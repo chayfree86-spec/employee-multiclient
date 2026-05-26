@@ -331,19 +331,26 @@
 
 .fa,
 .fas,
-.fa-solid {
+.fa-solid,
+.fa::before,
+.fas::before,
+.fa-solid::before {
     font-family: "Font Awesome 6 Free" !important;
     font-weight: 900 !important;
 }
 
 .far,
-.fa-regular {
+.fa-regular,
+.far::before,
+.fa-regular::before {
     font-family: "Font Awesome 6 Free" !important;
     font-weight: 400 !important;
 }
 
 .fab,
-.fa-brands {
+.fa-brands,
+.fab::before,
+.fa-brands::before {
     font-family: "Font Awesome 6 Brands" !important;
     font-weight: 400 !important;
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-superadmin-v6';
+const CACHE_NAME = 'employee-superadmin-v7';
 const APP_SHELL = [
   '/employee-admin/superadmin/index.html',
   '/employee-admin/superadmin/manifest.webmanifest',
