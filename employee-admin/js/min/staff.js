@@ -393,12 +393,12 @@ const StaffManager = {
 
                     return `
                                 <tr class="attendance-row staff-card-row" data-staff-id="${s.id}" role="button" tabindex="0" style="cursor:pointer;">
-                                    <td class="staff-card-primary" data-label="Name" style="font-weight:600; color:var(--primary);">
+                                    <td class="staff-card-primary" data-label="Name" style="font-weight:700; color:var(--primary);">
                                         <div style="display:flex; align-items:center; gap:10px;" class="staff-link">
                                             <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), 'random', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
                                             <div style="display:flex; flex-direction:column; gap:3px;">
                                                 <div style="display:flex; align-items:center; gap:6px;">
-                                                    <span>${s.name}</span>
+                                                    <span style="font-weight:700;">${s.name}</span>
                                                     ${hasAdvance ? '<i class="fas fa-star" style="color:#FFD700; font-size:0.8rem; text-shadow: 0 0 5px rgba(255,215,0,0.5);" title="Has Salary Advance"></i>' : ''}
                                                     ${hasDeduction ? '<i class="fas fa-star" style="color:#0984e3; font-size:0.8rem; text-shadow: 0 0 5px rgba(9,132,227,0.45);" title="Has Payment Deduction"></i>' : ''}
                                                 </div>

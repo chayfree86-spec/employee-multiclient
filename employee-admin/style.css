@@ -2915,6 +2915,14 @@ tbody tr td:last-child {
     color: #fff;
 }
 
+.staff-link span:first-child,
+.staff-card-primary,
+.profile-header h1,
+.profile-hero h1,
+.employee-name {
+    font-weight: 700 !important;
+}
+
 .staff-link:hover span {
     text-decoration: underline;
 }

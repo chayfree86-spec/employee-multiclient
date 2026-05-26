@@ -761,7 +761,7 @@ const SettingsManager = {
                     <span class="pass-dots">••••••••</span>
                     <span class="pass-text" style="display:none;">${user.password}</span>
                 </td>
-                <td style="font-size:0.9rem;">${staffName}</td>
+                <td style="font-size:0.9rem; font-weight:700;">${staffName}</td>
                 <td style="font-size:0.9rem;">${user.mobile || '---'}</td>
                 <td>
                     <div style="display:flex; flex-wrap:wrap; gap:5px;">

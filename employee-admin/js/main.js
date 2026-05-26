@@ -254,11 +254,11 @@ window.AppNavigation = {
     },
 
     scriptVersions: {
-        staff: '20260526-7',
-        attendance: '20260525-7',
+        staff: '20260526-8',
+        attendance: '20260526-1',
         salary: '20260525-14',
-        reports: '20260526-4',
-        settings: '20260525-4'
+        reports: '20260526-5',
+        settings: '20260526-1'
     },
 
     loadedScripts: new Set(Array.from(document.scripts)

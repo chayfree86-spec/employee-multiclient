@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-admin-v13';
+const CACHE_NAME = 'employee-admin-v14';
 const APP_SHELL = [
   '/employee-admin/attendance.html',
   '/employee-admin/index.html',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/employee-admin/reports.html',
   '/employee-admin/settings.html',
   '/employee-admin/manifest.webmanifest',
-  '/employee-admin/style.min.css?v=20260526-4',
+  '/employee-admin/style.min.css?v=20260526-5',
   '/employee-admin/assets/fonts/mulish/Mulish-400.ttf',
   '/employee-admin/assets/fonts/mulish/Mulish-500.ttf',
   '/employee-admin/assets/fonts/mulish/Mulish-600.ttf',

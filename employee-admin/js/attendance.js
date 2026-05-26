@@ -351,12 +351,12 @@ const AttendanceManager = {
             const perDaySalary = daysDivisor > 0 ? Math.round(baseSalary / daysDivisor) : 0;
             return `
                 <tr class="attendance-row">
-                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:600; color:var(--primary);">
+                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:700; color:var(--primary);">
                         <div style="display:flex; align-items:center; gap:10px;" class="staff-link">
                             <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), 'random', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)}" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
                             <div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <span>${s.name}</span>
+                                    <span style="font-weight:700;">${s.name}</span>
                                     ${hasAdvance
                     ? '<i class="fas fa-star" style="color:#FFD700; font-size:0.8rem; text-shadow: 0 0 5px rgba(255,215,0,0.5);" title="Advance pending"></i>'
                     : ''}

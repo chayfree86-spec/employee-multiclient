@@ -301,7 +301,7 @@ const ReportsManager = {
                     <div class="employee-cell">
                         <img src="${s.profile_image || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), '3E2723', 'fff', 40)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', '3E2723', 'fff', 40)" class="employee-avatar">
                         <div>
-                            <div style="font-weight:600;">${s.name}</div>
+                            <div style="font-weight:700;">${s.name}</div>
                             <div style="font-size:0.75rem; color:var(--text-muted);">${s.id}</div>
                         </div>
                     </div>

@@ -1,4 +1,169 @@
-const AttendanceManager={currentDate:null,saveDebounceMs:450,_saveTimer:null,_pendingSaveSnapshot:null,currentStaff:[],currentAttendanceData:{},currentAofRows:[],_lastChangedAttendance:null,normalizeStatus:t=>t?t==="half_day"||t==="halfday"?"halfday":t==="weekend"||t==="holiday"?"holiday":t:"",isWeeklyOffDate:t=>!1,getDisplayAttendanceData:(t,e)=>{const a={...e||{}};return Object.keys(a).length===0&&AttendanceManager.isWeeklyOffDate(AttendanceManager.currentDate)&&t.filter(n=>n.status==="active").forEach(n=>{a[n.id]="holiday"}),a},getLatestSavedDate:()=>null,formatDateLocal:t=>{const e=t.getFullYear(),a=String(t.getMonth()+1).padStart(2,"0"),n=String(t.getDate()).padStart(2,"0");return`${e}-${a}-${n}`},parseLocalDate:t=>{if(!t)return null;const[e,a,n]=String(t).split("-").map(Number);return!e||!a||!n?null:new Date(e,a-1,n)},isSameLocalDate:(t,e)=>!t||!e?!1:AttendanceManager.formatDateLocal(t)===AttendanceManager.formatDateLocal(e),updateDateSelectionState:t=>{const e=document.querySelector(".date-selection-box");if(!e||!t)return;const a=new Date;e.classList.toggle("has-selected-date",!!t),e.classList.toggle("is-today",AttendanceManager.isSameLocalDate(t,a))},decorateCalendarDay:(t,e,a)=>{const n=new Date;AttendanceManager.isSameLocalDate(e,n)&&t.classList.add("attendance-today")},changeDateByDays:t=>{const e=new Date(`${AttendanceManager.currentDate}T00:00:00`);e.setDate(e.getDate()+t);const a=new Date;if(a.setHours(0,0,0,0),e>a)return;AttendanceManager.currentDate=AttendanceManager.formatDateLocal(e);const n=document.getElementById("attendance-date")?._flatpickr;if(n){n.setDate(AttendanceManager.currentDate,!0);return}AttendanceManager.loadAttendanceList(),AttendanceManager.updateWeekdayDisplay(e)},hasAdvanceInCurrentViewMonth:t=>{const e=new Date(`${AttendanceManager.currentDate}T00:00:00`),a=e.getMonth(),n=e.getFullYear();return(AttendanceManager.currentAofRows||[]).some(r=>{if(String(r.employee_id)!==String(t)||r.type!=="advance"||(Number(r.amount)||0)<=0||!r.date)return!1;const l=new Date(`${r.date}T00:00:00`);return l.getMonth()===a&&l.getFullYear()===n})},hasDeductionInCurrentViewMonth:t=>{const e=new Date(`${AttendanceManager.currentDate}T00:00:00`),a=e.getMonth(),n=e.getFullYear();return(AttendanceManager.currentAofRows||[]).some(r=>{if(String(r.employee_id)!==String(t)||r.type!=="fine"||(Number(r.amount)||0)<=0||!r.date)return!1;const l=new Date(`${r.date}T00:00:00`);return l.getMonth()===a&&l.getFullYear()===n})},rowsToDayData:t=>{const e={};return(t||[]).forEach(a=>{e[String(a.employee_id)]=ApiSyncManager.statusFromApi(a.status)}),e},getMonthlyStatusCounts:t=>{const e={};return(t||[]).forEach(a=>{const n=String(a.employee_id||"");if(!n)return;const r=AttendanceManager.normalizeStatus(ApiSyncManager.statusFromApi(a.status));r&&(e[n]||(e[n]={present:0,absent:0,halfday:0,holiday:0}),r==="present"?e[n].present++:r==="absent"?e[n].absent++:r==="halfday"?e[n].halfday++:r==="holiday"&&e[n].holiday++)}),e},getStatusLabel:(t,e)=>e>0?`${t} <span class="attendance-status-count">[ ${e} ]</span>`:t,formatSalaryAmountWithHold:(t,e=null)=>window.HoldSalaryUI?.amount?window.HoldSalaryUI.amount(t,e):`\u20B9${Number(t||0).toLocaleString()}`,renderAttendance:t=>{t.innerHTML=`
+const AttendanceManager = {
+    currentDate: null,
+    saveDebounceMs: 450,
+    _saveTimer: null,
+    _pendingSaveSnapshot: null,
+    currentStaff: [],
+    currentAttendanceData: {},
+    currentAofRows: [],
+    _lastChangedAttendance: null,
+
+    normalizeStatus: (status) => {
+        if (!status) return '';
+        if (status === 'half_day' || status === 'halfday') return 'halfday';
+        if (status === 'weekend' || status === 'holiday') return 'holiday';
+        return status;
+    },
+
+    isWeeklyOffDate: (dateString) => {
+        return false;
+    },
+
+    getDisplayAttendanceData: (staff, attendanceData) => {
+        const data = { ...(attendanceData || {}) };
+
+        if (Object.keys(data).length === 0 && AttendanceManager.isWeeklyOffDate(AttendanceManager.currentDate)) {
+            staff
+                .filter((s) => s.status === 'active')
+                .forEach((s) => {
+                    data[s.id] = 'holiday';
+                });
+        }
+
+        return data;
+    },
+
+    getLatestSavedDate: () => {
+        return null;
+    },
+
+    formatDateLocal: (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
+    parseLocalDate: (dateString) => {
+        if (!dateString) return null;
+        const [year, month, day] = String(dateString).split('-').map(Number);
+        if (!year || !month || !day) return null;
+        return new Date(year, month - 1, day);
+    },
+
+    isSameLocalDate: (firstDate, secondDate) => {
+        if (!firstDate || !secondDate) return false;
+        return AttendanceManager.formatDateLocal(firstDate) === AttendanceManager.formatDateLocal(secondDate);
+    },
+
+    updateDateSelectionState: (date) => {
+        const dateBox = document.querySelector('.date-selection-box');
+        if (!dateBox || !date) return;
+
+        const today = new Date();
+
+        dateBox.classList.toggle('has-selected-date', Boolean(date));
+        dateBox.classList.toggle('is-today', AttendanceManager.isSameLocalDate(date, today));
+    },
+
+    decorateCalendarDay: (dayElem, dateObj, instance) => {
+        const today = new Date();
+
+        if (AttendanceManager.isSameLocalDate(dateObj, today)) {
+            dayElem.classList.add('attendance-today');
+        }
+    },
+
+    changeDateByDays: (days) => {
+        const current = new Date(`${AttendanceManager.currentDate}T00:00:00`);
+        current.setDate(current.getDate() + days);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (current > today) return;
+
+        AttendanceManager.currentDate = AttendanceManager.formatDateLocal(current);
+        const picker = document.getElementById('attendance-date')?._flatpickr;
+        if (picker) {
+            picker.setDate(AttendanceManager.currentDate, true);
+            return;
+        }
+
+        AttendanceManager.loadAttendanceList();
+        AttendanceManager.updateWeekdayDisplay(current);
+    },
+
+    hasAdvanceInCurrentViewMonth: (staffId) => {
+        const currentDate = new Date(`${AttendanceManager.currentDate}T00:00:00`);
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+
+        return (AttendanceManager.currentAofRows || []).some((entry) => {
+            if (String(entry.employee_id) !== String(staffId)) return false;
+            if (entry.type !== 'advance' || (Number(entry.amount) || 0) <= 0 || !entry.date) {
+                return false;
+            }
+
+            const entryDate = new Date(`${entry.date}T00:00:00`);
+            return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+        });
+    },
+
+    hasDeductionInCurrentViewMonth: (staffId) => {
+        const currentDate = new Date(`${AttendanceManager.currentDate}T00:00:00`);
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+
+        return (AttendanceManager.currentAofRows || []).some((entry) => {
+            if (String(entry.employee_id) !== String(staffId)) return false;
+            if (entry.type !== 'fine' || (Number(entry.amount) || 0) <= 0 || !entry.date) {
+                return false;
+            }
+
+            const entryDate = new Date(`${entry.date}T00:00:00`);
+            return entryDate.getMonth() === month && entryDate.getFullYear() === year;
+        });
+    },
+
+    rowsToDayData: (rows) => {
+        const dayData = {};
+        (rows || []).forEach((row) => {
+            dayData[String(row.employee_id)] = ApiSyncManager.statusFromApi(row.status);
+        });
+        return dayData;
+    },
+
+    getMonthlyStatusCounts: (rows) => {
+        const counts = {};
+        (rows || []).forEach((row) => {
+            const staffId = String(row.employee_id || '');
+            if (!staffId) return;
+            const status = AttendanceManager.normalizeStatus(ApiSyncManager.statusFromApi(row.status));
+            if (!status) return;
+            if (!counts[staffId]) {
+                counts[staffId] = { present: 0, absent: 0, halfday: 0, holiday: 0 };
+            }
+            if (status === 'present') counts[staffId].present++;
+            else if (status === 'absent') counts[staffId].absent++;
+            else if (status === 'halfday') counts[staffId].halfday++;
+            else if (status === 'holiday') counts[staffId].holiday++;
+        });
+        return counts;
+    },
+
+    getStatusLabel: (label, count) => {
+        return count > 0 ? `${label} <span class="attendance-status-count">[ ${count} ]</span>` : label;
+    },
+
+    formatSalaryAmountWithHold: (amount, holdSource = null) => {
+        if (window.HoldSalaryUI?.amount) {
+            return window.HoldSalaryUI.amount(amount, holdSource);
+        }
+        return `₹${Number(amount || 0).toLocaleString()}`;
+    },
+
+    renderAttendance: (container) => {
+        container.innerHTML = `
             <div class="card">
                 <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
                     <h3>Daily Attendance</h3>
@@ -51,66 +216,336 @@ const AttendanceManager={currentDate:null,saveDebounceMs:450,_saveTimer:null,_pe
                     </table>
                 </div>
             </div>
-        `,AttendanceManager.initDatePicker(),AttendanceManager.loadAttendanceList(),AttendanceManager.updateStats()},initDatePicker:()=>{const t=document.getElementById("attendance-date");if(!t)return;const e=AttendanceManager.parseLocalDate(AttendanceManager.currentDate)||new Date;AttendanceManager.updateWeekdayDisplay(e),AttendanceManager.updateDateSelectionState(e),t.addEventListener("change",()=>{if(!t.value)return;AttendanceManager.currentDate=t.value;const a=AttendanceManager.parseLocalDate(t.value);AttendanceManager.loadAttendanceList(),AttendanceManager.updateWeekdayDisplay(a),AttendanceManager.updateDateSelectionState(a)}),window.setTimeout(async()=>{await AttendanceManager.ensureFlatpickr(),!(typeof flatpickr!="function"||!document.getElementById("attendance-date")||t._flatpickr)&&flatpickr("#attendance-date",{defaultDate:AttendanceManager.currentDate,maxDate:"today",dateFormat:"Y-m-d",altInput:!0,altFormat:"d M, D",monthSelectorType:"static",disableMobile:!0,onDayCreate:(a,n,r,l)=>{AttendanceManager.decorateCalendarDay(l,l.dateObj,r)},onChange:(a,n)=>{AttendanceManager.currentDate=n,AttendanceManager.loadAttendanceList(),AttendanceManager.updateWeekdayDisplay(a[0]),AttendanceManager.updateDateSelectionState(a[0])},onMonthChange:(a,n,r)=>{r.redraw()},onYearChange:(a,n,r)=>{r.redraw()},onReady:(a,n,r)=>{r.calendarContainer.classList.add("attendance-calendar","app-date-calendar"),AttendanceManager.updateWeekdayDisplay(a[0]),AttendanceManager.updateDateSelectionState(a[0])}})},4e3)},ensureFlatpickr:()=>{if(typeof flatpickr=="function")return Promise.resolve();if(AttendanceManager._flatpickrPromise)return AttendanceManager._flatpickrPromise;const t="assets/lib/flatpickr/flatpickr.min.css?v=20260525-1";if(!document.querySelector(`link[href="${t}"]`)){const e=document.createElement("link");e.rel="stylesheet",e.href=t,document.head.appendChild(e)}return AttendanceManager._flatpickrPromise=new Promise(e=>{const a=document.createElement("script");a.src="assets/lib/flatpickr/flatpickr.min.js?v=20260525-1",a.async=!0,a.onload=()=>e(),a.onerror=()=>e(),document.body.appendChild(a)}),AttendanceManager._flatpickrPromise},loadAttendanceList:async()=>{const t=document.getElementById("attendance-list");if(!t)return;t.innerHTML='<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading backend attendance data...</td></tr>';let e=[],a={},n={};try{const s=new Date(`${AttendanceManager.currentDate}T00:00:00`),[o,u,c,d]=await Promise.all([ApiClient.listEmployees(),ApiClient.getAttendanceByDate(AttendanceManager.currentDate),ApiClient.listAof(),ApiClient.getAttendanceMonth(s.getMonth()+1,s.getFullYear())]);e=(o||[]).map(f=>ApiSyncManager.normalizeEmployee(f)),a=AttendanceManager.rowsToDayData(u||[]),n=AttendanceManager.getMonthlyStatusCounts(d?.list||[]),AttendanceManager.currentStaff=e,AttendanceManager.currentAttendanceData=a,AttendanceManager.currentAofRows=c||[]}catch(s){console.error("Failed to load attendance from backend",s),AttendanceManager.currentStaff=[],AttendanceManager.currentAttendanceData={},AttendanceManager.currentAofRows=[],t.innerHTML='<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--danger); font-weight:700;">Backend attendance data unavailable</td></tr>',AttendanceManager.updateStats(),AttendanceManager.updateEmptyStateNote(0,!0);return}const r=AttendanceManager.getDisplayAttendanceData(e,a);if(e.length===0){t.innerHTML='<tr><td colspan="3" style="text-align:center">No staff found. Add staff first.</td></tr>';return}t.innerHTML=e.filter(s=>s.status==="active").map(s=>{const o=AttendanceManager.normalizeStatus(r[s.id]||""),u=AttendanceManager.hasAdvanceInCurrentViewMonth(s.id),c=AttendanceManager.hasDeductionInCurrentViewMonth(s.id),d=n[String(s.id)]||{},f=Number(s.salaryAmount||0),i=new Date(`${AttendanceManager.currentDate}T00:00:00`),p=window.PayrollSettings.getDaysDivisor(i.getMonth()+1,i.getFullYear()),y=p>0?Math.round(f/p):0;return`
+        `;
+
+        AttendanceManager.initDatePicker();
+        AttendanceManager.loadAttendanceList();
+        AttendanceManager.updateStats();
+    },
+
+    initDatePicker: () => {
+        const input = document.getElementById('attendance-date');
+        if (!input) return;
+
+        const selectedDate = AttendanceManager.parseLocalDate(AttendanceManager.currentDate) || new Date();
+        AttendanceManager.updateWeekdayDisplay(selectedDate);
+        AttendanceManager.updateDateSelectionState(selectedDate);
+        input.addEventListener('change', () => {
+            if (!input.value) return;
+            AttendanceManager.currentDate = input.value;
+            const date = AttendanceManager.parseLocalDate(input.value);
+            AttendanceManager.loadAttendanceList();
+            AttendanceManager.updateWeekdayDisplay(date);
+            AttendanceManager.updateDateSelectionState(date);
+        });
+
+        window.setTimeout(async () => {
+            await AttendanceManager.ensureFlatpickr();
+            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
+
+            flatpickr("#attendance-date", {
+            defaultDate: AttendanceManager.currentDate,
+            maxDate: "today",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M, D",
+            monthSelectorType: "static",
+            disableMobile: true,
+            onDayCreate: (dObj, dStr, instance, dayElem) => {
+                AttendanceManager.decorateCalendarDay(dayElem, dayElem.dateObj, instance);
+            },
+            onChange: (selectedDates, dateStr) => {
+                AttendanceManager.currentDate = dateStr;
+                AttendanceManager.loadAttendanceList();
+                AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
+                AttendanceManager.updateDateSelectionState(selectedDates[0]);
+            },
+            onMonthChange: (selectedDates, dateStr, instance) => {
+                instance.redraw();
+            },
+            onYearChange: (selectedDates, dateStr, instance) => {
+                instance.redraw();
+            },
+            onReady: (selectedDates, dateStr, instance) => {
+                instance.calendarContainer.classList.add('attendance-calendar', 'app-date-calendar');
+                AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
+                AttendanceManager.updateDateSelectionState(selectedDates[0]);
+            }
+            });
+        }, 4000);
+    },
+
+    ensureFlatpickr: () => {
+        if (typeof flatpickr === 'function') return Promise.resolve();
+        if (AttendanceManager._flatpickrPromise) return AttendanceManager._flatpickrPromise;
+
+        const cssHref = 'assets/lib/flatpickr/flatpickr.min.css?v=20260525-1';
+        if (!document.querySelector(`link[href="${cssHref}"]`)) {
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = cssHref;
+            document.head.appendChild(css);
+        }
+
+        AttendanceManager._flatpickrPromise = new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'assets/lib/flatpickr/flatpickr.min.js?v=20260525-1';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.body.appendChild(script);
+        });
+
+        return AttendanceManager._flatpickrPromise;
+    },
+
+    loadAttendanceList: async () => {
+        const tbody = document.getElementById('attendance-list');
+        if (!tbody) return;
+
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading backend attendance data...</td></tr>';
+
+        let staff = [];
+        let attendanceData = {};
+        let monthlyCounts = {};
+        try {
+            const currentDate = new Date(`${AttendanceManager.currentDate}T00:00:00`);
+            const [employees, dayRows, aofRows, monthRows] = await Promise.all([
+                ApiClient.listEmployees(),
+                ApiClient.getAttendanceByDate(AttendanceManager.currentDate),
+                ApiClient.listAof(),
+                ApiClient.getAttendanceMonth(currentDate.getMonth() + 1, currentDate.getFullYear())
+            ]);
+            staff = (employees || []).map((employee) => ApiSyncManager.normalizeEmployee(employee));
+            attendanceData = AttendanceManager.rowsToDayData(dayRows || []);
+            monthlyCounts = AttendanceManager.getMonthlyStatusCounts(monthRows?.list || []);
+            AttendanceManager.currentStaff = staff;
+            AttendanceManager.currentAttendanceData = attendanceData;
+            AttendanceManager.currentAofRows = aofRows || [];
+        } catch (error) {
+            console.error('Failed to load attendance from backend', error);
+            AttendanceManager.currentStaff = [];
+            AttendanceManager.currentAttendanceData = {};
+            AttendanceManager.currentAofRows = [];
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2rem; color:var(--danger); font-weight:700;">Backend attendance data unavailable</td></tr>';
+            AttendanceManager.updateStats();
+            AttendanceManager.updateEmptyStateNote(0, true);
+            return;
+        }
+
+        const displayAttendanceData = AttendanceManager.getDisplayAttendanceData(staff, attendanceData);
+
+        if (staff.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">No staff found. Add staff first.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = staff.filter(s => s.status === 'active').map(s => {
+            const status = AttendanceManager.normalizeStatus(displayAttendanceData[s.id] || '');
+            const hasAdvance = AttendanceManager.hasAdvanceInCurrentViewMonth(s.id);
+            const hasDeduction = AttendanceManager.hasDeductionInCurrentViewMonth(s.id);
+            const counts = monthlyCounts[String(s.id)] || {};
+            const baseSalary = Number(s.salaryAmount || 0);
+            const currentDate = new Date(`${AttendanceManager.currentDate}T00:00:00`);
+            const daysDivisor = window.PayrollSettings.getDaysDivisor(currentDate.getMonth() + 1, currentDate.getFullYear());
+            const perDaySalary = daysDivisor > 0 ? Math.round(baseSalary / daysDivisor) : 0;
+            return `
                 <tr class="attendance-row">
-                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:600; color:var(--primary);">
+                    <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:700; color:var(--primary);">
                         <div style="display:flex; align-items:center; gap:10px;" class="staff-link">
-                            <img src="${s.photo||window.PhotoHelper.avatarUrl(encodeURIComponent(s.name),"random","fff",30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)}" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
+                            <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), 'random', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)}" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
                             <div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <span>${s.name}</span>
-                                    ${u?'<i class="fas fa-star" style="color:#FFD700; font-size:0.8rem; text-shadow: 0 0 5px rgba(255,215,0,0.5);" title="Advance pending"></i>':""}
-                                    ${c?'<i class="fas fa-star" style="color:#0984e3; font-size:0.8rem; text-shadow: 0 0 5px rgba(9,132,227,0.45);" title="Payment deduction applied"></i>':""}
+                                    <span style="font-weight:700;">${s.name}</span>
+                                    ${hasAdvance
+                    ? '<i class="fas fa-star" style="color:#FFD700; font-size:0.8rem; text-shadow: 0 0 5px rgba(255,215,0,0.5);" title="Advance pending"></i>'
+                    : ''}
+                                    ${hasDeduction
+                    ? '<i class="fas fa-star" style="color:#0984e3; font-size:0.8rem; text-shadow: 0 0 5px rgba(9,132,227,0.45);" title="Payment deduction applied"></i>'
+                    : ''}
                                 </div>
-                                <div class="attendance-salary-meta">Basic Salary: ${AttendanceManager.formatSalaryAmountWithHold(f,s)} / \u20B9${y.toLocaleString()}</div>
+                                <div class="attendance-salary-meta">Basic Salary: ${AttendanceManager.formatSalaryAmountWithHold(baseSalary, s)} / ₹${perDaySalary.toLocaleString()}</div>
                             </div>
                         </div>
                     </td>
                     <td onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; color:var(--text-muted);">${s.role}</td>
                     <td>
                         <div class="attendance-toggle">
-                            <label class="toggle-btn ${o==="present"?"active":""}" title="Present" style="--active-bg: var(--success);">
+                            <label class="toggle-btn ${status === 'present' ? 'active' : ''}" title="Present" style="--active-bg: var(--success);">
                                 <input type="radio" name="att-${s.id}" value="present" 
-                                    ${o==="present"?"checked":""} 
-                                    data-checked="${o==="present"}"
+                                    ${status === 'present' ? 'checked' : ''} 
+                                    data-checked="${status === 'present'}"
                                     onclick="AttendanceManager.toggleStatus(this)">
-                                ${AttendanceManager.getStatusLabel("P",Number(d.present||0))}
+                                ${AttendanceManager.getStatusLabel('P', Number(counts.present || 0))}
                             </label>
-                            <label class="toggle-btn ${o==="absent"?"active":""}" title="Absent" style="--active-bg: var(--danger);">
+                            <label class="toggle-btn ${status === 'absent' ? 'active' : ''}" title="Absent" style="--active-bg: var(--danger);">
                                 <input type="radio" name="att-${s.id}" value="absent" 
-                                    ${o==="absent"?"checked":""} 
-                                    data-checked="${o==="absent"}"
+                                    ${status === 'absent' ? 'checked' : ''} 
+                                    data-checked="${status === 'absent'}"
                                     onclick="AttendanceManager.toggleStatus(this)">
-                                ${AttendanceManager.getStatusLabel("A",Number(d.absent||0))}
+                                ${AttendanceManager.getStatusLabel('A', Number(counts.absent || 0))}
                             </label>
-                            <label class="toggle-btn ${o==="halfday"?"active":""}" title="Half Day" style="--active-bg: #FF9F43;">
+                            <label class="toggle-btn ${status === 'halfday' ? 'active' : ''}" title="Half Day" style="--active-bg: #FF9F43;">
                                 <input type="radio" name="att-${s.id}" value="halfday" 
-                                    ${o==="halfday"?"checked":""} 
-                                    data-checked="${o==="halfday"}"
+                                    ${status === 'halfday' ? 'checked' : ''} 
+                                    data-checked="${status === 'halfday'}"
                                     onclick="AttendanceManager.toggleStatus(this)">
-                                ${AttendanceManager.getStatusLabel("H",Number(d.halfday||0))}
+                                ${AttendanceManager.getStatusLabel('H', Number(counts.halfday || 0))}
                             </label>
-                            <label class="toggle-btn ${o==="holiday"?"active":""}" title="Holiday" style="--active-bg: #0ABDE3;">
+                            <label class="toggle-btn ${status === 'holiday' ? 'active' : ''}" title="Holiday" style="--active-bg: #0ABDE3;">
                                 <input type="radio" name="att-${s.id}" value="holiday" 
-                                    ${o==="holiday"?"checked":""} 
-                                    data-checked="${o==="holiday"}"
+                                    ${status === 'holiday' ? 'checked' : ''} 
+                                    data-checked="${status === 'holiday'}"
                                     onclick="AttendanceManager.toggleStatus(this)">
-                                ${AttendanceManager.getStatusLabel("Off",Number(d.holiday||0))}
+                                ${AttendanceManager.getStatusLabel('Off', Number(counts.holiday || 0))}
                             </label>
                         </div>
                     </td>
                 </tr>
-            `}).join(""),t.querySelectorAll(".attendance-toggle").forEach(s=>{const o=s.querySelector("input:checked");o&&(s.querySelectorAll(".toggle-btn").forEach(u=>u.classList.remove("active")),o.parentElement.classList.add("active"))});const l=Object.keys(a).length;AttendanceManager.updateEmptyStateNote(l),AttendanceManager.updateStats()},updateEmptyStateNote:(t,e=!1)=>{const a=document.getElementById("attendance-empty-note");if(!a)return;if(e){a.style.display="block",a.textContent="Backend attendance data unavailable. Cached fallback data is not shown.";return}if(t>0){a.style.display="none",a.innerHTML="";return}const n=AttendanceManager.getLatestSavedDate(),r=AttendanceManager.currentDate;if(AttendanceManager.isWeeklyOffDate(r)){a.style.display="block",a.textContent=`Tuesday weekly off is applied by default for ${r}.`;return}if(n&&n!==r){a.style.display="block",a.innerHTML=`No attendance saved for <strong>${r}</strong>. Latest saved date is <strong>${n}</strong>.
-                <button type="button" onclick="AttendanceManager.loadLatestSavedDate()" style="margin-left:10px; padding:6px 10px; border:none; border-radius:10px; background:#9a6700; color:white; font-weight:700; cursor:pointer;">Load Latest Saved Date</button>`;return}a.style.display="block",a.textContent=`No attendance saved for ${r}.`},loadLatestSavedDate:()=>{const t=AttendanceManager.getLatestSavedDate();if(!t)return;AttendanceManager.currentDate=t;const e=document.getElementById("attendance-date");e?e._flatpickr?.setDate(t,!0):AttendanceManager.loadAttendanceList()},updateHighlight:t=>{t.closest(".attendance-toggle").querySelectorAll(".toggle-btn").forEach(n=>n.classList.remove("active")),t.parentElement.classList.add("active"),document.getElementsByName(t.name).forEach(n=>n.dataset.checked=(n===t).toString()),AttendanceManager._lastChangedAttendance={staffId:String(t.name||"").replace(/^att-/,""),status:t.value},AttendanceManager.persistDraftFromDom()},toggleStatus:t=>{t.dataset.checked==="true"?(AttendanceManager._lastChangedAttendance={staffId:String(t.name||"").replace(/^att-/,""),status:""},t.checked=!1,t.dataset.checked="false",t.parentElement.classList.remove("active"),document.getElementsByName(t.name).forEach(n=>n.dataset.checked="false"),AttendanceManager.persistDraftFromDom()):AttendanceManager.updateHighlight(t)},markAll:async t=>{let e=AttendanceManager.currentStaff||[];if(e.length===0)try{e=(await ApiClient.listEmployees()||[]).map(i=>ApiSyncManager.normalizeEmployee(i)),AttendanceManager.currentStaff=e||[]}catch(i){window.showAlert(`Unable to load staff from backend: ${i.message}`);return}const a=e.filter(i=>i.status==="active");if(a.length===0)return;AttendanceManager._lastChangedAttendance={staffId:"",status:t,bulkCount:a.length};let n="var(--success)",r="Present",l="fa-check-double";t==="absent"?(n="var(--danger)",r="Absent",l="fa-user-times"):t==="holiday"&&(n="#0ABDE3",r="Weekly Off",l="fa-mug-hot");const s=`
+            `;
+        }).join('');
+
+        tbody.querySelectorAll('.attendance-toggle').forEach((group) => {
+            const checkedInput = group.querySelector('input:checked');
+            if (!checkedInput) return;
+
+            group.querySelectorAll('.toggle-btn').forEach((btn) => btn.classList.remove('active'));
+            checkedInput.parentElement.classList.add('active');
+        });
+
+        const filledCount = Object.keys(attendanceData).length;
+        AttendanceManager.updateEmptyStateNote(filledCount);
+
+        AttendanceManager.updateStats();
+    },
+
+    updateEmptyStateNote: (filledCount, backendFailed = false) => {
+        const note = document.getElementById('attendance-empty-note');
+        if (!note) return;
+
+        if (backendFailed) {
+            note.style.display = 'block';
+            note.textContent = 'Backend attendance data unavailable. Cached fallback data is not shown.';
+            return;
+        }
+
+        if (filledCount > 0) {
+            note.style.display = 'none';
+            note.innerHTML = '';
+            return;
+        }
+
+        const latestDate = AttendanceManager.getLatestSavedDate();
+        const currentDate = AttendanceManager.currentDate;
+
+        if (AttendanceManager.isWeeklyOffDate(currentDate)) {
+            note.style.display = 'block';
+            note.textContent = `Tuesday weekly off is applied by default for ${currentDate}.`;
+            return;
+        }
+
+        if (latestDate && latestDate !== currentDate) {
+            note.style.display = 'block';
+            note.innerHTML = `No attendance saved for <strong>${currentDate}</strong>. Latest saved date is <strong>${latestDate}</strong>.
+                <button type="button" onclick="AttendanceManager.loadLatestSavedDate()" style="margin-left:10px; padding:6px 10px; border:none; border-radius:10px; background:#9a6700; color:white; font-weight:700; cursor:pointer;">Load Latest Saved Date</button>`;
+            return;
+        }
+
+        note.style.display = 'block';
+        note.textContent = `No attendance saved for ${currentDate}.`;
+    },
+
+    loadLatestSavedDate: () => {
+        const latestDate = AttendanceManager.getLatestSavedDate();
+        if (!latestDate) return;
+
+        AttendanceManager.currentDate = latestDate;
+        const dateInput = document.getElementById('attendance-date');
+        if (dateInput) {
+            dateInput._flatpickr?.setDate(latestDate, true);
+        } else {
+            AttendanceManager.loadAttendanceList();
+        }
+    },
+
+    updateHighlight: (input) => {
+        const parent = input.closest('.attendance-toggle');
+        parent.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        input.parentElement.classList.add('active');
+
+        const group = document.getElementsByName(input.name);
+        group.forEach(r => r.dataset.checked = (r === input).toString());
+
+        AttendanceManager._lastChangedAttendance = {
+            staffId: String(input.name || '').replace(/^att-/, ''),
+            status: input.value
+        };
+        AttendanceManager.persistDraftFromDom();
+    },
+
+    toggleStatus: (radio) => {
+        const isCurrentlyChecked = radio.dataset.checked === 'true';
+
+        if (isCurrentlyChecked) {
+            AttendanceManager._lastChangedAttendance = {
+                staffId: String(radio.name || '').replace(/^att-/, ''),
+                status: ''
+            };
+            radio.checked = false;
+            radio.dataset.checked = 'false';
+            radio.parentElement.classList.remove('active');
+            const group = document.getElementsByName(radio.name);
+            group.forEach(r => r.dataset.checked = 'false');
+            AttendanceManager.persistDraftFromDom();
+        } else {
+            AttendanceManager.updateHighlight(radio);
+        }
+    },
+
+    markAll: async (status) => {
+        let staff = AttendanceManager.currentStaff || [];
+        if (staff.length === 0) {
+            try {
+                staff = (await ApiClient.listEmployees() || []).map((employee) => ApiSyncManager.normalizeEmployee(employee));
+                AttendanceManager.currentStaff = staff || [];
+            } catch (error) {
+                window.showAlert(`Unable to load staff from backend: ${error.message}`);
+                return;
+            }
+        }
+        const activeStaff = staff.filter((s) => s.status === 'active');
+
+        if (activeStaff.length === 0) return;
+        AttendanceManager._lastChangedAttendance = {
+            staffId: '',
+            status: status,
+            bulkCount: activeStaff.length
+        };
+
+        let accentColor = 'var(--success)';
+        let statusText = 'Present';
+        let statusIcon = 'fa-check-double';
+
+        if (status === 'absent') {
+            accentColor = 'var(--danger)';
+            statusText = 'Absent';
+            statusIcon = 'fa-user-times';
+        } else if (status === 'holiday') {
+            accentColor = '#0ABDE3';
+            statusText = 'Weekly Off';
+            statusIcon = 'fa-mug-hot';
+        }
+
+        const modalContent = `
             <div id="premium-sync-container" style="text-align:center; padding: 2rem 1rem; position:relative; min-width:350px;">
                 <div style="position:relative; z-index:1001;">
                     <div style="position:relative; width:220px; height:220px; margin:0 auto 2.5rem; display:flex; align-items:center; justify-content:center;">
-                        <div style="position:absolute; width:240px; height:240px; border:1px dashed ${n}; border-radius:50%; opacity:0.1; animation: spin-slow 20s linear infinite;"></div>
-                        <div style="position:absolute; width:260px; height:260px; border:1px solid ${n}; border-radius:50%; opacity:0.03; animation: pulse-ring 3s ease-out infinite;"></div>
+                        <div style="position:absolute; width:240px; height:240px; border:1px dashed ${accentColor}; border-radius:50%; opacity:0.1; animation: spin-slow 20s linear infinite;"></div>
+                        <div style="position:absolute; width:260px; height:260px; border:1px solid ${accentColor}; border-radius:50%; opacity:0.03; animation: pulse-ring 3s ease-out infinite;"></div>
                         
                         <svg viewBox="0 0 100 100" style="position:absolute; width:100%; height:100%; transform: rotate(-90deg);">
                             <circle cx="50" cy="50" r="45" stroke="var(--border)" stroke-width="5" fill="none" opacity="0.3" />
-                            <circle id="sync-ring" cx="50" cy="50" r="45" stroke="${n}" stroke-width="6" fill="none" 
+                            <circle id="sync-ring" cx="50" cy="50" r="45" stroke="${accentColor}" stroke-width="6" fill="none" 
                                 stroke-dasharray="283" stroke-dashoffset="283" 
                                 style="transition: stroke-dashoffset 0.3s ease-out; stroke-linecap: round;" />
                         </svg>
@@ -126,8 +561,8 @@ const AttendanceManager={currentDate:null,saveDebounceMs:450,_saveTimer:null,_pe
                     </div>
 
                     <div style="display:inline-flex; align-items:center; gap:15px; background:var(--bg-main); padding:1.25rem 3.5rem; border-radius:100px; border:1px solid var(--border); box-shadow:0 15px 45px rgba(0,0,0,0.08);">
-                        <i class="fas ${l}" style="color:${n}; font-size:1.5rem;"></i>
-                        <span style="font-weight:700; color:var(--text-main); font-size:1.2rem;">Marking <b>${r}</b></span>
+                        <i class="fas ${statusIcon}" style="color:${accentColor}; font-size:1.5rem;"></i>
+                        <span style="font-weight:700; color:var(--text-main); font-size:1.2rem;">Marking <b>${statusText}</b></span>
                     </div>
                 </div>
 
@@ -138,17 +573,255 @@ const AttendanceManager={currentDate:null,saveDebounceMs:450,_saveTimer:null,_pe
                     #modal-container { z-index: 10000 !important; }
                 </style>
             </div>
-        `;window.ModalManager&&window.ModalManager.show("Bulk Attendance Sync",s);const o=document.getElementById("sync-ring"),u=document.getElementById("sync-counter"),c=document.getElementById("syncing-name"),d=283,f=a.length;for(let i=0;i<f;i++){const p=a[i];u.textContent=i+1,o.style.strokeDashoffset=d-(i+1)/f*d,c&&(c.classList.remove("name-active"),await new Promise(m=>setTimeout(m,80)),c.textContent=p.name,c.classList.add("name-active"));const y=document.querySelector(`input[name="att-${p.id}"][value="${t}"]`);if(y){y.checked=!0,y.dataset.checked="true";const m=y.closest(".attendance-toggle");m&&(m.querySelectorAll(".toggle-btn").forEach(g=>g.classList.remove("active")),y.parentElement.classList.add("active")),document.getElementsByName(y.name).forEach(g=>{g!==y&&(g.dataset.checked="false")})}AttendanceManager.updateStats(),await new Promise(m=>setTimeout(m,220))}c&&(c.innerHTML='<span style="color:var(--success)"><i class="fas fa-check-circle"></i> Sync Successful</span>'),setTimeout(()=>{window.ModalManager?.hide(),AttendanceManager.persistDraftFromDom(!0)},1500)},collectDayDataFromDom:()=>{const t={};return document.querySelectorAll('#attendance-list input[type="radio"]:checked').forEach(e=>{const a=String(e.name||"").replace(/^att-/,"");a&&(t[a]=e.value)}),t},persistDraftFromDom:(t=!1)=>{const e=AttendanceManager.collectDayDataFromDom();ApiSyncManager.primeAttendanceDay(AttendanceManager.currentDate,e),window.SyncStatus?.show("Attendance changes pending","info");const a=Object.keys(e).length;if(AttendanceManager.updateEmptyStateNote(a),AttendanceManager.updateStats(),AttendanceManager._saveTimer&&(clearTimeout(AttendanceManager._saveTimer),AttendanceManager._saveTimer=null),AttendanceManager._pendingSaveSnapshot={date:AttendanceManager.currentDate,dayData:e},t){AttendanceManager.flushPendingSave();return}AttendanceManager._saveTimer=setTimeout(()=>{AttendanceManager.flushPendingSave()},AttendanceManager.saveDebounceMs)},flushPendingSave:async()=>{AttendanceManager._saveTimer&&(clearTimeout(AttendanceManager._saveTimer),AttendanceManager._saveTimer=null);const t=AttendanceManager._pendingSaveSnapshot;if(!t)return;AttendanceManager._pendingSaveSnapshot=null;const n=(AttendanceManager.currentStaff||[]).filter(r=>r.status==="active").map(r=>{const l=t.dayData[r.id];return l?{employee_id:Number(r.id),date:t.date,status:ApiSyncManager.statusToApi(l)}:null}).filter(Boolean);try{window.SyncStatus?.show("Saving attendance...","saving"),n.length>0&&await ApiClient.saveAttendanceBulk(n)}catch(r){window.SyncStatus?.show("Attendance sync failed","error",2800),window.showAlert(`Attendance sync failed: ${r.message}`);return}if(t.date===AttendanceManager.currentDate){AttendanceManager.currentAttendanceData={...t.dayData};const r={present:0,absent:0,halfday:0,holiday:0};Object.values(t.dayData||{}).forEach(i=>{const p=AttendanceManager.normalizeStatus(i);p&&Object.prototype.hasOwnProperty.call(r,p)&&r[p]++});const l={present:"P",absent:"A",halfday:"H",holiday:"Off"},s={present:"success",absent:"error",halfday:"warning",holiday:"info"},o={present:"Present Saved",absent:"Absent Saved",halfday:"Half Day Saved",holiday:"Off Saved"},u=AttendanceManager._lastChangedAttendance||{},c=AttendanceManager.normalizeStatus(u.status||""),d=(AttendanceManager.currentStaff||[]).find(i=>String(i.id)===String(u.staffId)),f=d?`${l[c]||"Not Marked"} saved for ${t.date}`:u.bulkCount?`${u.bulkCount} staff marked ${l[c]||""} for ${t.date}`:`Attendance saved for ${t.date}`;window.SyncStatus?.show(`Attendance saved for ${t.date}`,"success",1600),window.showAlert(f,{title:o[c]||"Attendance Saved",type:s[c]||"success",highlight:d?d.name:"",autoCloseMs:3600,stats:[{label:"P",value:r.present,type:"success"},{label:"A",value:r.absent,type:"error"},{label:"H",value:r.halfday,type:"warning"},{label:"Off",value:r.holiday,type:"info"}]})}},updateStats:()=>{const t=AttendanceManager.currentStaff||[],e=t.filter(y=>y.status==="active"),a=AttendanceManager.collectDayDataFromDom(),n=Object.keys(a).length?a:AttendanceManager.currentAttendanceData||{},r=AttendanceManager.getDisplayAttendanceData(t,n),l=document.getElementById("attendance-stats-row");if(!l)return;let s=0,o=0,u=0,c=0;e.forEach(y=>{const m=AttendanceManager.normalizeStatus(r[y.id]||"");m==="present"?s++:m==="absent"?o++:m==="halfday"?u++:m==="holiday"&&c++}),l.innerHTML=`
+        `;
+
+        if (window.ModalManager) {
+            window.ModalManager.show('Bulk Attendance Sync', modalContent);
+        }
+
+        const ring = document.getElementById('sync-ring');
+        const counter = document.getElementById('sync-counter');
+        const nameDisplay = document.getElementById('syncing-name');
+        const dashArray = 283;
+        const total = activeStaff.length;
+
+        for (let i = 0; i < total; i++) {
+            const s = activeStaff[i];
+            counter.textContent = i + 1;
+            ring.style.strokeDashoffset = dashArray - ((i + 1) / total) * dashArray;
+
+            if (nameDisplay) {
+                nameDisplay.classList.remove('name-active');
+                await new Promise(r => setTimeout(r, 80));
+                nameDisplay.textContent = s.name;
+                nameDisplay.classList.add('name-active');
+            }
+
+            const r = document.querySelector(`input[name="att-${s.id}"][value="${status}"]`);
+            if (r) {
+                r.checked = true;
+                r.dataset.checked = 'true';
+                const parent = r.closest('.attendance-toggle');
+                if (parent) {
+                    parent.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+                    r.parentElement.classList.add('active');
+                }
+                document.getElementsByName(r.name).forEach(input => { if (input !== r) input.dataset.checked = 'false'; });
+            }
+
+            AttendanceManager.updateStats();
+            await new Promise(r => setTimeout(r, 220));
+        }
+
+        if (nameDisplay) {
+            nameDisplay.innerHTML = `<span style="color:var(--success)"><i class="fas fa-check-circle"></i> Sync Successful</span>`;
+        }
+
+        setTimeout(() => {
+            window.ModalManager?.hide();
+            AttendanceManager.persistDraftFromDom(true);
+        }, 1500);
+    },
+
+    collectDayDataFromDom: () => {
+        const dayData = {};
+        document.querySelectorAll('#attendance-list input[type="radio"]:checked').forEach((radio) => {
+            const staffId = String(radio.name || '').replace(/^att-/, '');
+            if (staffId) dayData[staffId] = radio.value;
+        });
+        return dayData;
+    },
+
+    persistDraftFromDom: (saveImmediately = false) => {
+        const dayData = AttendanceManager.collectDayDataFromDom();
+        ApiSyncManager.primeAttendanceDay(AttendanceManager.currentDate, dayData);
+        window.SyncStatus?.show('Attendance changes pending', 'info');
+
+        const filledCount = Object.keys(dayData).length;
+        AttendanceManager.updateEmptyStateNote(filledCount);
+        AttendanceManager.updateStats();
+
+        if (AttendanceManager._saveTimer) {
+            clearTimeout(AttendanceManager._saveTimer);
+            AttendanceManager._saveTimer = null;
+        }
+
+        AttendanceManager._pendingSaveSnapshot = {
+            date: AttendanceManager.currentDate,
+            dayData
+        };
+
+        if (saveImmediately) {
+            AttendanceManager.flushPendingSave();
+            return;
+        }
+
+        AttendanceManager._saveTimer = setTimeout(() => {
+            AttendanceManager.flushPendingSave();
+        }, AttendanceManager.saveDebounceMs);
+    },
+
+    flushPendingSave: async () => {
+        if (AttendanceManager._saveTimer) {
+            clearTimeout(AttendanceManager._saveTimer);
+            AttendanceManager._saveTimer = null;
+        }
+
+        const snapshot = AttendanceManager._pendingSaveSnapshot;
+        if (!snapshot) return;
+
+        AttendanceManager._pendingSaveSnapshot = null;
+
+        const staff = AttendanceManager.currentStaff || [];
+        const activeStaff = staff.filter(s => s.status === 'active');
+        const records = activeStaff
+            .map((s) => {
+                const status = snapshot.dayData[s.id];
+                if (!status) return null;
+
+                return {
+                    employee_id: Number(s.id),
+                    date: snapshot.date,
+                    status: ApiSyncManager.statusToApi(status)
+                };
+            })
+            .filter(Boolean);
+
+        try {
+            window.SyncStatus?.show('Saving attendance...', 'saving');
+            if (records.length > 0) {
+                await ApiClient.saveAttendanceBulk(records);
+            }
+        } catch (error) {
+            window.SyncStatus?.show('Attendance sync failed', 'error', 2800);
+            window.showAlert(`Attendance sync failed: ${error.message}`);
+            return;
+        }
+
+        if (snapshot.date === AttendanceManager.currentDate) {
+            AttendanceManager.currentAttendanceData = { ...snapshot.dayData };
+            const savedCounts = { present: 0, absent: 0, halfday: 0, holiday: 0 };
+            Object.values(snapshot.dayData || {}).forEach((status) => {
+                const normalized = AttendanceManager.normalizeStatus(status);
+                if (normalized && Object.prototype.hasOwnProperty.call(savedCounts, normalized)) {
+                    savedCounts[normalized]++;
+                }
+            });
+            const statusLabels = {
+                present: 'P',
+                absent: 'A',
+                halfday: 'H',
+                holiday: 'Off'
+            };
+            const popupTypes = {
+                present: 'success',
+                absent: 'error',
+                halfday: 'warning',
+                holiday: 'info'
+            };
+            const popupTitles = {
+                present: 'Present Saved',
+                absent: 'Absent Saved',
+                halfday: 'Half Day Saved',
+                holiday: 'Off Saved'
+            };
+            const changed = AttendanceManager._lastChangedAttendance || {};
+            const changedStatus = AttendanceManager.normalizeStatus(changed.status || '');
+            const changedStaff = (AttendanceManager.currentStaff || []).find((s) => String(s.id) === String(changed.staffId));
+            const savedMessage = changedStaff
+                ? `${statusLabels[changedStatus] || 'Not Marked'} saved for ${snapshot.date}`
+                : changed.bulkCount
+                    ? `${changed.bulkCount} staff marked ${statusLabels[changedStatus] || ''} for ${snapshot.date}`
+                    : `Attendance saved for ${snapshot.date}`;
+            window.SyncStatus?.show(`Attendance saved for ${snapshot.date}`, 'success', 1600);
+            window.showAlert(savedMessage, {
+                title: popupTitles[changedStatus] || 'Attendance Saved',
+                type: popupTypes[changedStatus] || 'success',
+                highlight: changedStaff ? changedStaff.name : '',
+                autoCloseMs: 3600,
+                stats: [
+                    { label: 'P', value: savedCounts.present, type: 'success' },
+                    { label: 'A', value: savedCounts.absent, type: 'error' },
+                    { label: 'H', value: savedCounts.halfday, type: 'warning' },
+                    { label: 'Off', value: savedCounts.holiday, type: 'info' }
+                ]
+            });
+        }
+    },
+
+    updateStats: () => {
+        const staff = AttendanceManager.currentStaff || [];
+        const activeStaff = staff.filter(s => s.status === 'active');
+        const domData = AttendanceManager.collectDayDataFromDom();
+        const attendanceData = Object.keys(domData).length ? domData : (AttendanceManager.currentAttendanceData || {});
+        const displayAttendanceData = AttendanceManager.getDisplayAttendanceData(staff, attendanceData);
+        const statsRow = document.getElementById('attendance-stats-row');
+        if (!statsRow) return;
+
+        let present = 0, absent = 0, halfday = 0, holiday = 0;
+
+        activeStaff.forEach(s => {
+            const status = AttendanceManager.normalizeStatus(displayAttendanceData[s.id] || '');
+            if (status === 'present') present++;
+            else if (status === 'absent') absent++;
+            else if (status === 'halfday') halfday++;
+            else if (status === 'holiday') holiday++;
+        });
+
+        statsRow.innerHTML = `
             <div class="attendance-stat-pill stat-present" title="Present">
-                <i class="fas fa-check"></i><strong>${s}</strong>
+                <i class="fas fa-check"></i><strong>${present}</strong>
             </div>
             <div class="attendance-stat-pill stat-absent" title="Absent">
-                <i class="fas fa-xmark"></i><strong>${o}</strong>
+                <i class="fas fa-xmark"></i><strong>${absent}</strong>
             </div>
             <div class="attendance-stat-pill stat-halfday" title="Half Day">
-                <i class="fas fa-adjust"></i><strong>${u}</strong>
+                <i class="fas fa-adjust"></i><strong>${halfday}</strong>
             </div>
             <div class="attendance-stat-pill stat-off" title="Off">
-                <i class="fas fa-mug-hot"></i><strong>${c}</strong>
+                <i class="fas fa-mug-hot"></i><strong>${holiday}</strong>
             </div>
-        `;const d=document.getElementById("btn-mark-present"),f=document.getElementById("btn-mark-holiday"),i=document.getElementById("btn-mark-absent"),p=e.length;p>0&&d&&f&&i&&(s===p?(d.style.background="var(--success)",d.style.color="white"):(d.style.background="rgba(0, 184, 148, 0.1)",d.style.color="var(--success)"),c===p?(f.style.background="var(--info)",f.style.color="white"):(f.style.background="rgba(10, 189, 227, 0.1)",f.style.color="var(--info)"),o===p?(i.style.background="var(--danger)",i.style.color="white"):(i.style.background="rgba(214, 48, 49, 0.1)",i.style.color="var(--danger)"))},updateWeekdayDisplay:t=>{const e=document.getElementById("weekday-text");if(e&&t){const a={weekday:"long"};e.textContent=t.toLocaleDateString("en-US",a).toUpperCase()}AttendanceManager.updateDateSelectionState(t)}};AttendanceManager.currentDate=AttendanceManager.formatDateLocal(new Date),window.AttendanceManager=AttendanceManager;
+        `;
+
+        const btnPresent = document.getElementById('btn-mark-present');
+        const btnHoliday = document.getElementById('btn-mark-holiday');
+        const btnAbsent = document.getElementById('btn-mark-absent');
+        const total = activeStaff.length;
+
+        if (total > 0 && btnPresent && btnHoliday && btnAbsent) {
+            if (present === total) {
+                btnPresent.style.background = 'var(--success)';
+                btnPresent.style.color = 'white';
+            } else {
+                btnPresent.style.background = 'rgba(0, 184, 148, 0.1)';
+                btnPresent.style.color = 'var(--success)';
+            }
+            if (holiday === total) {
+                btnHoliday.style.background = 'var(--info)';
+                btnHoliday.style.color = 'white';
+            } else {
+                btnHoliday.style.background = 'rgba(10, 189, 227, 0.1)';
+                btnHoliday.style.color = 'var(--info)';
+            }
+            if (absent === total) {
+                btnAbsent.style.background = 'var(--danger)';
+                btnAbsent.style.color = 'white';
+            } else {
+                btnAbsent.style.background = 'rgba(214, 48, 49, 0.1)';
+                btnAbsent.style.color = 'var(--danger)';
+            }
+        }
+    },
+
+    updateWeekdayDisplay: (date) => {
+        const weekdayText = document.getElementById('weekday-text');
+        if (weekdayText && date) {
+            const options = { weekday: 'long' };
+            weekdayText.textContent = date.toLocaleDateString('en-US', options).toUpperCase();
+        }
+        AttendanceManager.updateDateSelectionState(date);
+    }
+};
+
+AttendanceManager.currentDate = AttendanceManager.formatDateLocal(new Date());
+window.AttendanceManager = AttendanceManager;
