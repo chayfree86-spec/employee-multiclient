@@ -254,7 +254,7 @@ window.AppNavigation = {
     },
 
     scriptVersions: {
-        staff: '20260525-27',
+        staff: '20260526-7',
         attendance: '20260525-7',
         salary: '20260525-14',
         reports: '20260526-4',

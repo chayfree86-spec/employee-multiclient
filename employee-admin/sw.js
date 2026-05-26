@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-admin-v6';
+const CACHE_NAME = 'employee-admin-v9';
 const APP_SHELL = [
   '/employee-admin/attendance.html',
   '/employee-admin/index.html',

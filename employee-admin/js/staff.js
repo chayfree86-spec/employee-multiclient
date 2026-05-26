@@ -392,8 +392,8 @@
                     const joinDateDisplay = StaffManager.formatDateDisplay(s.joinDate);
 
                     return `
-                                <tr class="attendance-row staff-card-row">
-                                    <td class="staff-card-primary" data-label="Name" onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; font-weight:600; color:var(--primary);">
+                                <tr class="attendance-row staff-card-row" data-staff-id="${s.id}" role="button" tabindex="0" style="cursor:pointer;">
+                                    <td class="staff-card-primary" data-label="Name" style="font-weight:600; color:var(--primary);">
                                         <div style="display:flex; align-items:center; gap:10px;" class="staff-link">
                                             <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), 'random', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', 'random', 'fff', 30)" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
                                             <div style="display:flex; flex-direction:column; gap:3px;">
@@ -407,7 +407,7 @@
                                         </div>
                                     </td>
                                     <td data-label="Mobile" style="font-weight:600; color:var(--text-muted);"><i class="fas fa-phone-alt" style="font-size:0.75rem; margin-right:5px; opacity:0.5;"></i>${s.mobile || '---'}</td>
-                                    <td data-label="Role" onclick="switchView('staff-profile', '${s.id}')" style="cursor:pointer; color:var(--text-muted);">${s.role || '---'}</td>
+                                    <td data-label="Role" style="color:var(--text-muted);">${s.role || '---'}</td>
                                     <td data-label="Salary Type">${s.salaryType}</td>
                                     <td data-label="Amount">${StaffManager.formatSalaryAmountWithHold(s.salaryAmount, s)}</td>
                                     <td data-label="Status">
@@ -477,6 +477,29 @@
         container.innerHTML = StaffManager.buildStaffListMarkup(searchQuery, {
             staffList: StaffManager.currentStaffList,
             aofRows: StaffManager.currentAofRows
+        });
+        StaffManager.bindStaffCardProfileLinks(container);
+    },
+
+    bindStaffCardProfileLinks: (container) => {
+        container.querySelectorAll('.staff-card-row[data-staff-id]').forEach((row) => {
+            const openProfile = (event) => {
+                if (event.target.closest('button, input, label, a, select, textarea, .staff-card-actions')) {
+                    return;
+                }
+
+                const staffId = row.dataset.staffId;
+                if (staffId) {
+                    AppNavigation.go('staff-profile', staffId);
+                }
+            };
+
+            row.addEventListener('click', openProfile);
+            row.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                openProfile(event);
+            });
         });
     },
 
@@ -1988,19 +2011,21 @@
         const d = new Date(`${date}T00:00:00`);
         ModalManager.hide();
 
-        const salaryList = document.getElementById('salary-list');
-        if (salaryList) {
-            await SalaryManager.refreshSalaryList();
-        } else {
-            await StaffManager.renderProfilePage(document.getElementById('view-container'), staffId, d.getMonth(), d.getFullYear());
-        }
-
         try {
             await ApiClient.saveAttendance({
                 employee_id: Number(staffId),
                 date,
                 status: ApiSyncManager.statusToApi(status)
             });
+
+            ApiSyncManager.primeAttendanceDay(date, attendance[date]);
+            const salaryList = document.getElementById('salary-list');
+            if (salaryList) {
+                await SalaryManager.refreshSalaryList();
+            } else {
+                await StaffManager.renderProfilePage(document.getElementById('view-container'), staffId, d.getMonth(), d.getFullYear());
+            }
+
             window.SyncStatus?.show(`Attendance saved for ${new Date(date).toLocaleDateString()}`, 'success', 1600);
             window.showAlert(`Status updated for ${new Date(date).toLocaleDateString()}`);
         } catch (error) {
@@ -2015,6 +2040,7 @@
 
             ApiSyncManager.primeAttendanceDay(date, latestAttendance[date]);
 
+            const salaryList = document.getElementById('salary-list');
             if (salaryList) {
                 await SalaryManager.refreshSalaryList();
             } else {
