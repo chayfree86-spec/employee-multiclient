@@ -222,9 +222,6 @@ const ReportsManager = {
         }
 
         const stats = dashboard.stats;
-        const staffRows = ReportsManager.getDashboardStaffRows(dashboard.staffOverview || []);
-        const attendanceBars = ReportsManager.getDashboardAttendanceBars(dashboard.charts?.attendanceHistory || []);
-
         container.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
@@ -290,62 +287,6 @@ const ReportsManager = {
                     <button class="btn-primary" onclick="switchView('salary')" style="min-width:200px;">
                         <i class="fas fa-wallet" style="margin-right:8px;"></i> Manage Monthly Salaries
                     </button>
-                </div>
-            </div>
-
-            <div class="dashboard-middle" style="grid-template-columns: 1fr;"> <!-- Made it 1 column -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Weekly Attendance Trends</h3>
-                        <select class="btn-outline">
-                            <option>Last 7 Days</option>
-                        </select>
-                    </div>
-                    <div class="chart-container" style="align-items:end; min-height:230px;">
-                        ${attendanceBars.map((bar) => `
-                            <div class="chart-bar-wrapper" title="${bar.title}" style="gap:8px;">
-                                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:800;">${bar.total}</div>
-                                <div class="chart-bar-stack" style="height:${bar.height}%; min-height:${bar.total > 0 ? '18px' : '3px'}; width:28px; border-radius:12px 12px 4px 4px; overflow:hidden; display:flex; flex-direction:column-reverse; background:#eef2f7; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);">
-                                    <span style="display:block; flex:0 0 ${bar.presentPct}%; background:#00b894;"></span>
-                                    <span style="display:block; flex:0 0 ${bar.halfPct}%; background:#fdcb6e;"></span>
-                                    <span style="display:block; flex:0 0 ${bar.absentPct}%; background:#d63031;"></span>
-                                </div>
-                                <span class="chart-label">${bar.label}</span>
-                                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:700;">${bar.dateLabel}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div style="display:flex; justify-content:center; gap:18px; margin-top:14px; font-size:0.75rem; color:var(--text-muted); font-weight:700;">
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#00b894;"></span> Present</span>
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#fdcb6e;"></span> Half Day</span>
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#d63031;"></span> Absent</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3>Staff Overview</h3>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-outline"><i class="fas fa-filter"></i> Filter</button>
-                        <button class="btn-primary" style="background:#2b1b17;"><i class="fas fa-file-export"></i> Export</button>
-                    </div>
-                </div>
-                <div class="staff-overview">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>EMPLOYEE</th>
-                                <th>ROLE</th>
-                                <th>SHIFT STATUS</th>
-                                <th>CHECK IN</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${staffRows}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         `;

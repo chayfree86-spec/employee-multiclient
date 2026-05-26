@@ -81,6 +81,7 @@ const ApiClient = {
         const { method = 'GET', body, formData, headers = {} } = options;
         const requestHeaders = {
             Accept: 'application/json',
+            'Cache-Control': 'no-store',
             ...headers
         };
         const token = sessionStorage.getItem('employee_management_admin_token');
@@ -90,7 +91,8 @@ const ApiClient = {
 
         const fetchOptions = {
             method,
-            headers: requestHeaders
+            headers: requestHeaders,
+            cache: 'no-store'
         };
 
         if (formData) {

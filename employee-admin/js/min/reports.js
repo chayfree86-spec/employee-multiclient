@@ -1,4 +1,91 @@
-const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},currentExpandedAttendanceStaffId:null,getSummaryCount:(t,e)=>{const a=(t||[]).find(d=>d.status===e);return Number(a?.count||0)},normalizeReportStatus:t=>t==="half_day"?"halfday":t==="weekend"?"holiday":t||"",getPayrollStatusMeta:t=>{const e=String(t||"").toLowerCase();return e==="generated"||e==="paid"?{generated:!0,html:'<span class="status-badge status-active"><i class="fas fa-check-circle" style="margin-right:5px;"></i> Generated</span>'}:e==="draft"?{generated:!1,html:'<span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted);"><i class="fas fa-file-alt" style="margin-right:5px;"></i> Draft</span>'}:{generated:!1,html:'<span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted);"><i class="fas fa-clock" style="margin-right:5px;"></i> Pending</span>'}},getSlipActionButtonStyle:(t,e)=>`padding:8px 12px; font-size:0.8rem; border-radius:10px; background:${t?e||"var(--primary)":"#b8b0ad"}; color:#fff; opacity:${t?"1":"0.55"}; cursor:${t?"pointer":"not-allowed"}; border:none;`,formatSalaryAmountWithHold:(t,e=null)=>window.HoldSalaryUI?.amount?window.HoldSalaryUI.amount(t,e):`\u20B9${Number(t||0).toLocaleString()}`,formatReportDate:t=>{if(!t)return"";const e=new Date(`${t}T00:00:00`);return Number.isNaN(e.getTime())?t:`${String(e.getDate()).padStart(2,"0")}-${String(e.getMonth()+1).padStart(2,"0")}-${e.getFullYear()}`},getDefaultReportPeriod:async()=>{const t=new Date,e={month:t.getMonth(),year:t.getFullYear()};try{const d=(await ApiClient.listPayroll()||[]).filter(i=>{const r=String(i.status||"").toLowerCase();return r==="generated"||r==="paid"||i.id}).map(i=>({month:Number(i.month||0),year:Number(i.year||0),id:Number(i.id||0)})).filter(i=>i.month>=1&&i.month<=12&&i.year>0).sort((i,r)=>r.year-i.year||r.month-i.month||r.id-i.id);if(d.length>0)return{month:d[0].month-1,year:d[0].year}}catch(a){console.error("Failed to load default report payroll period from backend",a)}return e},renderExpandedStaffShell:(t,e,a,d="")=>`
+const ReportsManager = {
+    currentAttendanceReport: [],
+    currentAttendanceMap: {},
+    currentExpandedAttendanceStaffId: null,
+
+    getSummaryCount: (summary, status) => {
+        const row = (summary || []).find((entry) => entry.status === status);
+        return Number(row?.count || 0);
+    },
+
+    normalizeReportStatus: (status) => {
+        if (status === 'half_day') return 'halfday';
+        if (status === 'weekend') return 'holiday';
+        return status || '';
+    },
+
+    getPayrollStatusMeta: (status) => {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized === 'generated' || normalized === 'paid') {
+            return {
+                generated: true,
+                html: '<span class="status-badge status-active"><i class="fas fa-check-circle" style="margin-right:5px;"></i> Generated</span>'
+            };
+        }
+        if (normalized === 'draft') {
+            return {
+                generated: false,
+                html: '<span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted);"><i class="fas fa-file-alt" style="margin-right:5px;"></i> Draft</span>'
+            };
+        }
+        return {
+            generated: false,
+            html: '<span class="status-badge" style="background:rgba(0,0,0,0.05); color:var(--text-muted);"><i class="fas fa-clock" style="margin-right:5px;"></i> Pending</span>'
+        };
+    },
+
+    getSlipActionButtonStyle: (isGenerated, color) => {
+        const activeColor = color || 'var(--primary)';
+        return `padding:8px 12px; font-size:0.8rem; border-radius:10px; background:${isGenerated ? activeColor : '#b8b0ad'}; color:#fff; opacity:${isGenerated ? '1' : '0.55'}; cursor:${isGenerated ? 'pointer' : 'not-allowed'}; border:none;`;
+    },
+
+    formatSalaryAmountWithHold: (amount, holdSource = null) => {
+        if (window.HoldSalaryUI?.amount) {
+            return window.HoldSalaryUI.amount(amount, holdSource);
+        }
+        return `₹${Number(amount || 0).toLocaleString()}`;
+    },
+
+    formatReportDate: (value) => {
+        if (!value) return '';
+        const d = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return value;
+        return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    },
+
+    getDefaultReportPeriod: async () => {
+        const now = new Date();
+        const fallback = { month: now.getMonth(), year: now.getFullYear() };
+
+        try {
+            const payrollRows = await ApiClient.listPayroll();
+            const generatedRows = (payrollRows || [])
+                .filter((row) => {
+                    const status = String(row.status || '').toLowerCase();
+                    return status === 'generated' || status === 'paid' || row.id;
+                })
+                .map((row) => ({
+                    month: Number(row.month || 0),
+                    year: Number(row.year || 0),
+                    id: Number(row.id || 0)
+                }))
+                .filter((row) => row.month >= 1 && row.month <= 12 && row.year > 0)
+                .sort((a, b) => (b.year - a.year) || (b.month - a.month) || (b.id - a.id));
+
+            if (generatedRows.length > 0) {
+                return {
+                    month: generatedRows[0].month - 1,
+                    year: generatedRows[0].year
+                };
+            }
+        } catch (error) {
+            console.error('Failed to load default report payroll period from backend', error);
+        }
+
+        return fallback;
+    },
+
+    renderExpandedStaffShell: (staff, sectionTitle, detailHtml, actionHtml = '') => `
         <table style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr style="background:var(--bg-main);">
@@ -11,38 +98,60 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                 <tr class="attendance-row active">
                     <td style="padding:1.2rem;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <img src="${t.photo||window.PhotoHelper.avatarUrl(encodeURIComponent(t.name),"3E2723","fff",35)}" alt="${t.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(t.name)}', '3E2723', 'fff', 35)" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
+                            <img src="${staff.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(staff.name), '3E2723', 'fff', 35)}" alt="${staff.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(staff.name)}', '3E2723', 'fff', 35)" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
                             <div>
-                                <div style="font-weight:800;">${t.name}</div>
-                                <div style="font-size:0.75rem; color:var(--text-muted);">${t.role||"Staff"}</div>
+                                <div style="font-weight:800;">${staff.name}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">${staff.role || 'Staff'}</div>
                             </div>
                         </div>
                     </td>
-                    <td style="padding:1.2rem; font-weight:800; color:var(--primary);">${e}</td>
-                    <td style="padding:1.2rem; text-align:right;">${d}</td>
+                    <td style="padding:1.2rem; font-weight:800; color:var(--primary);">${sectionTitle}</td>
+                    <td style="padding:1.2rem; text-align:right;">${actionHtml}</td>
                 </tr>
                 <tr class="details-row active">
                     <td colspan="3" style="padding:0;">
                         <div style="padding:1.5rem; border-top:1px solid var(--border); background:#fafafa;">
-                            ${a}
+                            ${detailHtml}
                         </div>
                     </td>
                 </tr>
             </tbody>
         </table>
-    `,renderExpandedFinancialDetail:(t,e=null)=>t?`
-            <div style="display:grid; grid-template-columns:repeat(3, minmax(160px, 1fr)); gap:12px;">
-                ${[["Base Salary",t.base_salary||0,"var(--primary)",e],["Overtime",t.overtime||0,"var(--success)"],["Payment Deduction",Number(t.fine||0)+Number(t.deduction||0),"var(--danger)"],["Advance Deducted",t.advance_deduction||0,"var(--info)"],["Hold Salary",t.hold_deduction||0,"var(--warning)"],["Net Payable",t.total_salary||0,"var(--success)"]].map(([d,i,r,n])=>`
+    `,
+
+    renderExpandedFinancialDetail: (record, staff = null) => {
+        if (!record) {
+            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">Backend payroll record not generated for this month.</div>';
+        }
+        const cards = [
+            ['Base Salary', record.base_salary || 0, 'var(--primary)', staff],
+            ['Overtime', record.overtime || 0, 'var(--success)'],
+            ['Payment Deduction', Number(record.fine || 0) + Number(record.deduction || 0), 'var(--danger)'],
+            ['Advance Deducted', record.advance_deduction || 0, 'var(--info)'],
+            ['Hold Salary', record.hold_deduction || 0, 'var(--warning)'],
+            ['Net Payable', record.total_salary || 0, 'var(--success)']
+        ].map(([label, amount, color, holdSource]) => `
             <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:1rem;">
-                <div style="font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">${d}</div>
-                <div style="font-size:1.2rem; font-weight:900; color:${r}; margin-top:5px;">${d==="Base Salary"?ReportsManager.formatSalaryAmountWithHold(i,n):`\u20B9${Number(i||0).toLocaleString()}`}</div>
+                <div style="font-size:0.68rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">${label}</div>
+                <div style="font-size:1.2rem; font-weight:900; color:${color}; margin-top:5px;">${label === 'Base Salary' ? ReportsManager.formatSalaryAmountWithHold(amount, holdSource) : `₹${Number(amount || 0).toLocaleString()}`}</div>
             </div>
-        `).join("")}
+        `).join('');
+
+        return `
+            <div style="display:grid; grid-template-columns:repeat(3, minmax(160px, 1fr)); gap:12px;">
+                ${cards}
             </div>
             <div style="margin-top:12px; color:var(--text-muted); font-size:0.82rem; font-weight:700;">
-                Attendance: ${Number(t.present_days||0)}P / ${Number(t.half_days||0)}HD / ${Number(t.absent_days||0)}A / ${Number(t.weekend_holiday_days||0)}HO
+                Attendance: ${Number(record.present_days || 0)}P / ${Number(record.half_days || 0)}HD / ${Number(record.absent_days || 0)}A / ${Number(record.weekend_holiday_days || 0)}HO
             </div>
-        `:'<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">Backend payroll record not generated for this month.</div>',renderExpandedAdvancesDetail:t=>t.length?`
+        `;
+    },
+
+    renderExpandedAdvancesDetail: (entries) => {
+        if (!entries.length) {
+            return '<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">No backend advance records found for this month.</div>';
+        }
+        return `
             <table style="width:100%; border-collapse:collapse; background:var(--bg-card); border-radius:14px; overflow:hidden;">
                 <thead>
                     <tr style="background:var(--bg-main);">
@@ -53,46 +162,67 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     </tr>
                 </thead>
                 <tbody>
-                    ${t.map(e=>`
+                    ${entries.map((entry) => `
                         <tr style="border-bottom:1px solid var(--border);">
-                            <td style="padding:1rem; font-weight:700;">${ReportsManager.formatReportDate(e.date)}</td>
-                            <td style="padding:1rem;"><span class="badge ${e.type==="paid"?"badge-danger":"badge-success"}">${e.type.toUpperCase()}</span></td>
-                            <td style="padding:1rem; font-weight:900;">\u20B9${Number(e.amount||0).toLocaleString()}</td>
-                            <td style="padding:1rem; color:var(--text-muted);">${e.remark||"---"}</td>
+                            <td style="padding:1rem; font-weight:700;">${ReportsManager.formatReportDate(entry.date)}</td>
+                            <td style="padding:1rem;"><span class="badge ${entry.type === 'paid' ? 'badge-danger' : 'badge-success'}">${entry.type.toUpperCase()}</span></td>
+                            <td style="padding:1rem; font-weight:900;">₹${Number(entry.amount || 0).toLocaleString()}</td>
+                            <td style="padding:1rem; color:var(--text-muted);">${entry.remark || '---'}</td>
                         </tr>
-                    `).join("")}
+                    `).join('')}
                 </tbody>
             </table>
-        `:'<div style="padding:2rem; text-align:center; color:var(--text-muted); font-weight:800;">No backend advance records found for this month.</div>',renderExpandedSlipDetail:(t,e,a,d,i,r)=>{const n=ReportsManager.getPayrollStatusMeta(e?.status),s=n.generated;return`
+        `;
+    },
+
+    renderExpandedSlipDetail: (staff, record, month, year, monthKey, monthName) => {
+        const statusMeta = ReportsManager.getPayrollStatusMeta(record?.status);
+        const isGenerated = statusMeta.generated;
+        return `
             <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
                 <div>
                     <div style="font-size:0.72rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Salary Slip Status</div>
-                    <div style="margin-top:8px;">${n.html}</div>
+                    <div style="margin-top:8px;">${statusMeta.html}</div>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:8px;">
-                    <button class="btn-primary" onclick="${s?`SalaryManager.showSalarySlipUI('${t.id}', ${a}, ${d})`:"return false"}"
-                        style="${ReportsManager.getSlipActionButtonStyle(s,"var(--primary)")}"
-                        ${s?"":"disabled"} title="View Slip">
+                    <button class="btn-primary" onclick="${isGenerated ? `SalaryManager.showSalarySlipUI('${staff.id}', ${month}, ${year})` : 'return false'}"
+                        style="${ReportsManager.getSlipActionButtonStyle(isGenerated, 'var(--primary)')}"
+                        ${!isGenerated ? 'disabled' : ''} title="View Slip">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn-primary" onclick="${s?`SalaryManager.showSalarySlipUI('${t.id}', ${a}, ${d}); setTimeout(() => SalaryManager.printSlip(), 500);`:"return false"}"
-                        style="${ReportsManager.getSlipActionButtonStyle(s,"#0984e3")}"
-                        ${s?"":"disabled"} title="Download/Print">
+                    <button class="btn-primary" onclick="${isGenerated ? `SalaryManager.showSalarySlipUI('${staff.id}', ${month}, ${year}); setTimeout(() => SalaryManager.printSlip(), 500);` : 'return false'}"
+                        style="${ReportsManager.getSlipActionButtonStyle(isGenerated, '#0984e3')}"
+                        ${!isGenerated ? 'disabled' : ''} title="Download/Print">
                         <i class="fas fa-print"></i>
                     </button>
-                    <button class="btn-primary" onclick="${s?`ReportsManager.handleShareSlip('${t.id}', ${a}, ${d}, '${i}', '${r}')`:"return false"}"
-                        style="${ReportsManager.getSlipActionButtonStyle(s,"#25D366")}"
-                        ${s?"":"disabled"} title="Share on WhatsApp">
+                    <button class="btn-primary" onclick="${isGenerated ? `ReportsManager.handleShareSlip('${staff.id}', ${month}, ${year}, '${monthKey}', '${monthName}')` : 'return false'}"
+                        style="${ReportsManager.getSlipActionButtonStyle(isGenerated, '#25D366')}"
+                        ${!isGenerated ? 'disabled' : ''} title="Share on WhatsApp">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                 </div>
             </div>
-            ${e?`<div style="margin-top:1rem; color:var(--text-muted); font-size:0.82rem; font-weight:700;">Net Payable: \u20B9${Number(e.total_salary||0).toLocaleString()}</div>`:""}
-        `},renderDashboard:async t=>{const e=await ApiClient.getDashboard().catch(r=>(console.error("Failed to load dashboard",r),null));if(!e?.stats){t.innerHTML=`
+            ${record ? `<div style="margin-top:1rem; color:var(--text-muted); font-size:0.82rem; font-weight:700;">Net Payable: ₹${Number(record.total_salary || 0).toLocaleString()}</div>` : ''}
+        `;
+    },
+
+    renderDashboard: async (container) => {
+        const dashboard = await ApiClient.getDashboard().catch((error) => {
+            console.error('Failed to load dashboard', error);
+            return null;
+        });
+
+        if (!dashboard?.stats) {
+            container.innerHTML = `
                 <div class="card" style="padding:3rem; text-align:center; color:var(--danger); font-weight:700;">
                     Backend dashboard data unavailable
                 </div>
-            `;return}const a=e.stats,d=ReportsManager.getDashboardStaffRows(e.staffOverview||[]),i=ReportsManager.getDashboardAttendanceBars(e.charts?.attendanceHistory||[]);t.innerHTML=`
+            `;
+            return;
+        }
+
+        const stats = dashboard.stats;
+        container.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-header">
@@ -101,10 +231,10 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     </div>
                     <div class="stat-info">
                         <h3>Total Staff</h3>
-                        <div class="stat-value">${a.totalEmployees??0}</div>
+                        <div class="stat-value">${stats.totalEmployees ?? 0}</div>
                         <div style="display:flex; gap:12px; margin-top:6px; flex-wrap:wrap; font-size:0.75rem; font-weight:700;">
-                            <span style="color:var(--success);">Active: ${a.activeEmployees??0}</span>
-                            <span style="color:var(--danger);">Deactive: ${a.deactiveEmployees??0}</span>
+                            <span style="color:var(--success);">Active: ${stats.activeEmployees ?? 0}</span>
+                            <span style="color:var(--danger);">Deactive: ${stats.deactiveEmployees ?? 0}</span>
                         </div>
                     </div>
                 </div>
@@ -115,7 +245,7 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     </div>
                     <div class="stat-info">
                         <h3>Present Today</h3>
-                        <div class="stat-value">${a.todayPresent??0}</div>
+                        <div class="stat-value">${stats.todayPresent ?? 0}</div>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -125,7 +255,7 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     </div>
                     <div class="stat-info">
                         <h3>Absent Today</h3>
-                        <div class="stat-value">${a.todayAbsent??0}</div>
+                        <div class="stat-value">${stats.todayAbsent ?? 0}</div>
                     </div>
                 </div>
             </div>
@@ -138,19 +268,19 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                 <div class="payment-summary-grid" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:20px; margin-bottom:1.5rem;">
                     <div>
                         <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px; font-weight:600;">TOTAL SALARY</p>
-                        <h4 style="font-size:1.25rem; color:var(--primary);">\u20B9${Number(a.totalBaseSalary||0).toLocaleString()}</h4>
+                        <h4 style="font-size:1.25rem; color:var(--primary);">₹${Number(stats.totalBaseSalary || 0).toLocaleString()}</h4>
                     </div>
                     <div style="border-left:1px solid var(--border); padding-left:20px;">
                         <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px; font-weight:600;">PAYOUT SALARY</p>
-                        <h4 style="font-size:1.25rem; color:var(--success);">\u20B9${Number(a.currentMonthPayable||0).toLocaleString()}</h4>
+                        <h4 style="font-size:1.25rem; color:var(--success);">₹${Number(stats.currentMonthPayable || 0).toLocaleString()}</h4>
                     </div>
                     <div style="border-left:1px solid var(--border); padding-left:20px;">
                         <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px; font-weight:600;">ADVANCE PAYMENTS</p>
-                        <h4 style="font-size:1.25rem; color:var(--info);">\u20B9${Number(a.totalAdvancePending||0).toLocaleString()} (${Number(a.advanceStaffCount||0)} Staff)</h4>
+                        <h4 style="font-size:1.25rem; color:var(--info);">₹${Number(stats.totalAdvancePending || 0).toLocaleString()} (${Number(stats.advanceStaffCount || 0)} Staff)</h4>
                     </div>
                     <div style="border-left:1px solid var(--border); padding-left:20px;">
                         <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:4px; font-weight:600;">HELD SALARY</p>
-                        <h4 style="font-size:1.25rem; color:var(--danger);">\u20B9${Number(a.heldSalaryAmount||0).toLocaleString()} (${Number(a.holdStaffCount||0)} Staff)</h4>
+                        <h4 style="font-size:1.25rem; color:var(--danger);">₹${Number(stats.heldSalaryAmount || 0).toLocaleString()} (${Number(stats.holdStaffCount || 0)} Staff)</h4>
                     </div>
                 </div>
                 <div style="text-align:right;">
@@ -159,79 +289,102 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     </button>
                 </div>
             </div>
+        `;
+    },
 
-            <div class="dashboard-middle" style="grid-template-columns: 1fr;"> <!-- Made it 1 column -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Weekly Attendance Trends</h3>
-                        <select class="btn-outline">
-                            <option>Last 7 Days</option>
-                        </select>
-                    </div>
-                    <div class="chart-container" style="align-items:end; min-height:230px;">
-                        ${i.map(r=>`
-                            <div class="chart-bar-wrapper" title="${r.title}" style="gap:8px;">
-                                <div style="font-size:0.72rem; color:var(--text-muted); font-weight:800;">${r.total}</div>
-                                <div class="chart-bar-stack" style="height:${r.height}%; min-height:${r.total>0?"18px":"3px"}; width:28px; border-radius:12px 12px 4px 4px; overflow:hidden; display:flex; flex-direction:column-reverse; background:#eef2f7; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.04);">
-                                    <span style="display:block; flex:0 0 ${r.presentPct}%; background:#00b894;"></span>
-                                    <span style="display:block; flex:0 0 ${r.halfPct}%; background:#fdcb6e;"></span>
-                                    <span style="display:block; flex:0 0 ${r.absentPct}%; background:#d63031;"></span>
-                                </div>
-                                <span class="chart-label">${r.label}</span>
-                                <span style="font-size:0.65rem; color:var(--text-muted); font-weight:700;">${r.dateLabel}</span>
-                            </div>
-                        `).join("")}
-                    </div>
-                    <div style="display:flex; justify-content:center; gap:18px; margin-top:14px; font-size:0.75rem; color:var(--text-muted); font-weight:700;">
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#00b894;"></span> Present</span>
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#fdcb6e;"></span> Half Day</span>
-                        <span><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:#d63031;"></span> Absent</span>
-                    </div>
-                </div>
-            </div>
+    getDashboardStaffRows: (staff = []) => {
+        if (staff.length === 0) return '<tr><td colspan="5" style="text-align:center; padding:2rem;">No staff registered yet</td></tr>';
 
-            <div class="card" style="margin-top: 2rem;">
-                <div class="card-header">
-                    <h3>Staff Overview</h3>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-outline"><i class="fas fa-filter"></i> Filter</button>
-                        <button class="btn-primary" style="background:#2b1b17;"><i class="fas fa-file-export"></i> Export</button>
-                    </div>
-                </div>
-                <div class="staff-overview">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>EMPLOYEE</th>
-                                <th>ROLE</th>
-                                <th>SHIFT STATUS</th>
-                                <th>CHECK IN</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${d}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `},getDashboardStaffRows:(t=[])=>t.length===0?'<tr><td colspan="5" style="text-align:center; padding:2rem;">No staff registered yet</td></tr>':t.slice(0,5).map(e=>`
+        return staff.slice(0, 5).map(s => `
             <tr>
                 <td>
                     <div class="employee-cell">
-                        <img src="${e.profile_image||window.PhotoHelper.avatarUrl(encodeURIComponent(e.name),"3E2723","fff",40)}" alt="${e.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(e.name)}', '3E2723', 'fff', 40)" class="employee-avatar">
+                        <img src="${s.profile_image || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), '3E2723', 'fff', 40)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', '3E2723', 'fff', 40)" class="employee-avatar">
                         <div>
-                            <div style="font-weight:600;">${e.name}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">${e.id}</div>
+                            <div style="font-weight:600;">${s.name}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">${s.id}</div>
                         </div>
                     </div>
                 </td>
-                <td>${e.role}</td>
-                <td><span class="badge ${ReportsManager.getAttendanceBadgeClass(e.attendance_status)}">${ReportsManager.formatAttendanceStatus(e.attendance_status)}</span></td>
-                <td>${e.check_in||"--:--"}</td>
-                <td><button class="btn-outline" onclick="switchView('staff-profile', '${e.id}')">View Profile</button></td>
+                <td>${s.role}</td>
+                <td><span class="badge ${ReportsManager.getAttendanceBadgeClass(s.attendance_status)}">${ReportsManager.formatAttendanceStatus(s.attendance_status)}</span></td>
+                <td>${s.check_in || '--:--'}</td>
+                <td><button class="btn-outline" onclick="switchView('staff-profile', '${s.id}')">View Profile</button></td>
             </tr>
-        `).join(""),getDashboardAttendanceBars:(t=[])=>{if(!Array.isArray(t)||t.length===0)return["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((a,d)=>({label:a,height:0,isWeekend:d>=5}));const e=Math.max(...t.map(a=>{const d=Number(a.present||0),i=Number(a.absent||0),r=Number(a.half_day||a.halfDay||0);return d+i+r}),1);return t.slice(-7).map((a,d)=>{const i=Number(a.present||0),r=Number(a.absent||0),n=Number(a.half_day||a.halfDay||0),s=i+r+n,l=a.date?new Date(`${a.date}T00:00:00`):null,S=l&&!Number.isNaN(l.getTime())?l.toLocaleDateString("en-IN",{day:"2-digit",month:"short"}):"";return{label:a.label||a.day||a.month||`D${d+1}`,dateLabel:S,total:s,presentPct:s>0?Math.round(i/s*100):0,absentPct:s>0?Math.round(r/s*100):0,halfPct:s>0?Math.round(n/s*100):0,height:s>0?Math.max(12,Math.round(s/e*100)):2,isWeekend:!!(a.is_weekend||a.isWeekend),title:`${a.date||""} | Present: ${i}, Half: ${n}, Absent: ${r}`}})},getAttendanceBadgeClass:t=>t==="present"?"badge-success":t==="absent"?"badge-danger":t==="half_day"||t==="halfday"?"badge-warning":t==="holiday"||t==="weekend"?"badge-info":"badge-warning",formatAttendanceStatus:t=>({present:"Present",absent:"Absent",half_day:"Half Day",halfday:"Half Day",holiday:"Holiday",weekend:"Weekly Off",not_marked:"Not Marked"})[t]||"Not Marked",renderReports:async t=>{await ApiSyncManager.bootstrapCore();const e=["January","February","March","April","May","June","July","August","September","October","November","December"],a=new Date,d=await ReportsManager.getDefaultReportPeriod(),i=d.month,r=d.year,n=Array.from(new Set([r,a.getFullYear(),a.getFullYear()-1])).filter(s=>Number.isFinite(s)&&s>0).sort((s,l)=>l-s);t.innerHTML=`
+        `).join('');
+    },
+
+    getDashboardAttendanceBars: (history = []) => {
+        if (!Array.isArray(history) || history.length === 0) {
+            return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, index) => ({
+                label,
+                height: 0,
+                isWeekend: index >= 5
+            }));
+        }
+
+        const max = Math.max(...history.map(row => {
+            const present = Number(row.present || 0);
+            const absent = Number(row.absent || 0);
+            const half = Number(row.half_day || row.halfDay || 0);
+            return present + absent + half;
+        }), 1);
+        return history.slice(-7).map((row, index) => {
+            const present = Number(row.present || 0);
+            const absent = Number(row.absent || 0);
+            const half = Number(row.half_day || row.halfDay || 0);
+            const total = present + absent + half;
+            const date = row.date ? new Date(`${row.date}T00:00:00`) : null;
+            const dateLabel = date && !Number.isNaN(date.getTime())
+                ? date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+                : '';
+            return {
+                label: row.label || row.day || row.month || `D${index + 1}`,
+                dateLabel,
+                total,
+                presentPct: total > 0 ? Math.round((present / total) * 100) : 0,
+                absentPct: total > 0 ? Math.round((absent / total) * 100) : 0,
+                halfPct: total > 0 ? Math.round((half / total) * 100) : 0,
+                height: total > 0 ? Math.max(12, Math.round((total / max) * 100)) : 2,
+                isWeekend: Boolean(row.is_weekend || row.isWeekend),
+                title: `${row.date || ''} | Present: ${present}, Half: ${half}, Absent: ${absent}`
+            };
+        });
+    },
+
+    getAttendanceBadgeClass: (status) => {
+        if (status === 'present') return 'badge-success';
+        if (status === 'absent') return 'badge-danger';
+        if (status === 'half_day' || status === 'halfday') return 'badge-warning';
+        if (status === 'holiday' || status === 'weekend') return 'badge-info';
+        return 'badge-warning';
+    },
+
+    formatAttendanceStatus: (status) => {
+        const labels = {
+            present: 'Present',
+            absent: 'Absent',
+            half_day: 'Half Day',
+            halfday: 'Half Day',
+            holiday: 'Holiday',
+            weekend: 'Weekly Off',
+            not_marked: 'Not Marked'
+        };
+        return labels[status] || 'Not Marked';
+    },
+
+    renderReports: async (container) => {
+        await ApiSyncManager.bootstrapCore();
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const now = new Date();
+        const defaultPeriod = await ReportsManager.getDefaultReportPeriod();
+        const currentMonth = defaultPeriod.month;
+        const currentYear = defaultPeriod.year;
+        const yearOptions = Array.from(new Set([currentYear, now.getFullYear(), now.getFullYear() - 1]))
+            .filter((year) => Number.isFinite(year) && year > 0)
+            .sort((a, b) => b - a);
+
+        container.innerHTML = `
             <div style="display:flex; flex-direction:column; gap:2rem; padding-bottom:2rem; animation: fadeIn 0.4s ease-out;">
                 <!-- Premium Header -->
                 <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, var(--primary), var(--primary-light)); padding:2rem; border-radius:24px; color:white; box-shadow:0 10px 30px rgba(62, 39, 35, 0.15);">
@@ -249,13 +402,13 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                         <div class="report-period-control">
                             <select id="report-month" onchange="ReportsManager.refreshReportView()" 
                                 class="report-period-select" style="width:150px;">
-                                ${e.map((s,l)=>`<option value="${l}" ${l===i?"selected":""}>${s}</option>`).join("")}
+                                ${months.map((m, i) => `<option value="${i}" ${i === currentMonth ? 'selected' : ''}>${m}</option>`).join('')}
                             </select>
                         </div>
                         <div class="report-period-control">
                             <select id="report-year" onchange="ReportsManager.refreshReportView()" 
                                 class="report-period-select" style="width:115px;">
-                                ${n.map(s=>`<option value="${s}" ${s===r?"selected":""}>${s}</option>`).join("")}
+                                ${yearOptions.map((year) => `<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -318,28 +471,173 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                     margin-bottom: 5px;
                 }
             </style>
-        `,window.requestAnimationFrame(()=>{window.setupCustomDropdown?.("report-month"),window.setupCustomDropdown?.("report-year")}),ReportsManager.refreshReportView()},updateActiveTab:(t,e)=>{document.querySelectorAll(".report-tab-btn").forEach(a=>{a.classList.remove("active"),a.style.background="transparent",a.style.color="var(--text-muted)",a.style.boxShadow="none"}),t.classList.add("active"),t.style.background="white",t.style.color="var(--primary)",t.style.boxShadow="0 4px 6px rgba(0,0,0,0.05)",ReportsManager.showReport(e)},refreshReportView:()=>{const e=document.querySelector(".report-tab-btn.active").textContent.toLowerCase(),a=e.includes("attendance")?"attendance":e.includes("financials")?"salary":e.includes("advances")?"advances":"slips";ReportsManager.showReport(a)},showReport:async t=>{const e=document.getElementById("report-action-btn");e&&(t==="slips"?(e.onclick=()=>SalaryManager.downloadAllSlips(),e.querySelector("span").textContent="Download All Slips",e.querySelector("i").className="fas fa-file-pdf",e.style.background="#0984e3"):(e.onclick=()=>ReportsManager.downloadTableAsPDF(t),e.querySelector("span").textContent=`Download ${t.charAt(0).toUpperCase()+t.slice(1)} Report`,e.querySelector("i").className="fas fa-file-pdf",e.style.background="var(--primary)"));const a=["January","February","March","April","May","June","July","August","September","October","November","December"],d=document.getElementById("report-content"),i=document.getElementById("report-summary-cards"),r=parseInt(document.getElementById("report-month").value),n=parseInt(document.getElementById("report-year").value);let s=[],l={},S={},A=[],u={advances:{},fines:{},overtime:{}};try{const[c,p,m,g]=await Promise.all([ApiClient.listEmployees(),ApiClient.listAof(),ApiClient.listPayroll(r+1,n),ApiClient.getAttendanceMonth(r+1,n)]);s=(c||[]).map(o=>ApiSyncManager.normalizeEmployee(o)).filter(o=>o.status==="active"||o.status==="inactive"),(g?.list||[]).forEach(o=>{const f=String(o.employee_id||"");!f||!o.date||(l[o.date]||(l[o.date]={}),l[o.date][f]=ApiSyncManager.statusFromApi(o.status))}),ReportsManager.currentAttendanceMap=l,u=ApiSyncManager.normalizeAof(p||[]),StorageManager.saveLocal("advances",u.advances),StorageManager.saveLocal("fines",u.fines),StorageManager.saveLocal("overtime",u.overtime),A=m||[],S=ApiSyncManager.buildPayrollState(A).salaryAdjustments}catch(c){console.error("Failed to load backend report data",c),d.innerHTML='<div style="padding:3rem; text-align:center; color:var(--danger); font-weight:700;">Backend report data unavailable</div>';return}const h=`${n}-${String(r+1).padStart(2,"0")}`,M={};A.forEach(c=>{M[String(c.employee_id)]=c});const y=s.find(c=>String(c.id)===String(ReportsManager.currentExpandedAttendanceStaffId));if(t!=="attendance"&&y){if(t==="salary"){const c=M[String(y.id)];d.innerHTML=ReportsManager.renderExpandedStaffShell(y,"Financials",ReportsManager.renderExpandedFinancialDetail(c,y),c?`<button class="btn-primary" onclick="SalaryManager.showSalarySlipUI('${y.id}', ${r}, ${n})" style="padding:8px 12px; font-size:0.8rem; border-radius:10px;"><i class="fas fa-file-invoice-dollar"></i> Slip</button>`:"");return}if(t==="advances"){const c=((u.advances||{})[String(y.id)]||[]).filter(p=>{const m=new Date(`${p.date}T00:00:00`);return m.getMonth()===r&&m.getFullYear()===n});d.innerHTML=ReportsManager.renderExpandedStaffShell(y,"Advances",ReportsManager.renderExpandedAdvancesDetail(c));return}if(t==="slips"){d.innerHTML=ReportsManager.renderExpandedStaffShell(y,"Salary Slips",ReportsManager.renderExpandedSlipDetail(y,M[String(y.id)],r,n,h,a[r]));return}}if(t==="attendance"){let c=0,p=0,m=0;const g=s.map(o=>{let f=0,v=0,x=0,D=0;const E=new Date(n,r+1,0).getDate();for(let k=1;k<=E;k++){const z=`${n}-${String(r+1).padStart(2,"0")}-${String(k).padStart(2,"0")}`,$=(l[z]||{})[o.id];$==="present"?f++:$==="absent"?v++:$==="halfday"?x++:$==="holiday"&&D++}return c+=f,p+=v,m+=x,`
-                    <tr class="attendance-row" onclick="ReportsManager.toggleStaffAttendance('${o.id}')" id="row-${o.id}">
+        `;
+        window.requestAnimationFrame(() => {
+            window.setupCustomDropdown?.('report-month');
+            window.setupCustomDropdown?.('report-year');
+        });
+        ReportsManager.refreshReportView();
+    },
+
+    updateActiveTab: (btn, type) => {
+        document.querySelectorAll('.report-tab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.style.background = 'transparent';
+            b.style.color = 'var(--text-muted)';
+            b.style.boxShadow = 'none';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'white';
+        btn.style.color = 'var(--primary)';
+        btn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.05)';
+
+        ReportsManager.showReport(type);
+    },
+
+    refreshReportView: () => {
+        const activeTab = document.querySelector('.report-tab-btn.active');
+        const text = activeTab.textContent.toLowerCase();
+        const type = text.includes('attendance') ? 'attendance' :
+            text.includes('financials') ? 'salary' :
+                text.includes('advances') ? 'advances' : 'slips';
+        ReportsManager.showReport(type);
+    },
+
+    showReport: async (type) => {
+        // Update Action Button based on tab
+        const actionBtn = document.getElementById('report-action-btn');
+        if (actionBtn) {
+            if (type === 'slips') {
+                actionBtn.onclick = () => SalaryManager.downloadAllSlips();
+                actionBtn.querySelector('span').textContent = 'Download All Slips';
+                actionBtn.querySelector('i').className = 'fas fa-file-pdf';
+                actionBtn.style.background = '#0984e3';
+            } else {
+                actionBtn.onclick = () => ReportsManager.downloadTableAsPDF(type);
+                actionBtn.querySelector('span').textContent = `Download ${type.charAt(0).toUpperCase() + type.slice(1)} Report`;
+                actionBtn.querySelector('i').className = 'fas fa-file-pdf';
+                actionBtn.style.background = 'var(--primary)';
+            }
+        }
+
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const content = document.getElementById('report-content');
+        const summaryContainer = document.getElementById('report-summary-cards');
+        const month = parseInt(document.getElementById('report-month').value);
+        const year = parseInt(document.getElementById('report-year').value);
+        let staff = [];
+        let attendance = {};
+        let adjustments = {};
+        let payrollRecords = [];
+        let aofState = { advances: {}, fines: {}, overtime: {} };
+        try {
+            const [employees, aofRows, payrollRows, monthlyAttendance] = await Promise.all([
+                ApiClient.listEmployees(),
+                ApiClient.listAof(),
+                ApiClient.listPayroll(month + 1, year),
+                ApiClient.getAttendanceMonth(month + 1, year)
+            ]);
+            staff = (employees || [])
+                .map((employee) => ApiSyncManager.normalizeEmployee(employee))
+                .filter(s => s.status === 'active' || s.status === 'inactive');
+
+            (monthlyAttendance?.list || []).forEach((row) => {
+                const staffId = String(row.employee_id || '');
+                if (!staffId || !row.date) return;
+                if (!attendance[row.date]) attendance[row.date] = {};
+                attendance[row.date][staffId] = ApiSyncManager.statusFromApi(row.status);
+            });
+            ReportsManager.currentAttendanceMap = attendance;
+
+            aofState = ApiSyncManager.normalizeAof(aofRows || []);
+            StorageManager.saveLocal('advances', aofState.advances);
+            StorageManager.saveLocal('fines', aofState.fines);
+            StorageManager.saveLocal('overtime', aofState.overtime);
+            payrollRecords = payrollRows || [];
+            adjustments = ApiSyncManager.buildPayrollState(payrollRecords).salaryAdjustments;
+        } catch (error) {
+            console.error('Failed to load backend report data', error);
+            content.innerHTML = '<div style="padding:3rem; text-align:center; color:var(--danger); font-weight:700;">Backend report data unavailable</div>';
+            return;
+        }
+        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+        const payrollByEmployee = {};
+        payrollRecords.forEach((record) => {
+            payrollByEmployee[String(record.employee_id)] = record;
+        });
+        const selectedStaff = staff.find((entry) => String(entry.id) === String(ReportsManager.currentExpandedAttendanceStaffId));
+
+        if (type !== 'attendance' && selectedStaff) {
+            if (type === 'salary') {
+                const selectedPayrollRecord = payrollByEmployee[String(selectedStaff.id)];
+                content.innerHTML = ReportsManager.renderExpandedStaffShell(
+                    selectedStaff,
+                    'Financials',
+                    ReportsManager.renderExpandedFinancialDetail(selectedPayrollRecord, selectedStaff),
+                    selectedPayrollRecord ? `<button class="btn-primary" onclick="SalaryManager.showSalarySlipUI('${selectedStaff.id}', ${month}, ${year})" style="padding:8px 12px; font-size:0.8rem; border-radius:10px;"><i class="fas fa-file-invoice-dollar"></i> Slip</button>` : ''
+                );
+                return;
+            }
+
+            if (type === 'advances') {
+                const entries = ((aofState.advances || {})[String(selectedStaff.id)] || []).filter((entry) => {
+                    const d = new Date(`${entry.date}T00:00:00`);
+                    return d.getMonth() === month && d.getFullYear() === year;
+                });
+                content.innerHTML = ReportsManager.renderExpandedStaffShell(
+                    selectedStaff,
+                    'Advances',
+                    ReportsManager.renderExpandedAdvancesDetail(entries)
+                );
+                return;
+            }
+
+            if (type === 'slips') {
+                content.innerHTML = ReportsManager.renderExpandedStaffShell(
+                    selectedStaff,
+                    'Salary Slips',
+                    ReportsManager.renderExpandedSlipDetail(selectedStaff, payrollByEmployee[String(selectedStaff.id)], month, year, monthKey, months[month])
+                );
+                return;
+            }
+        }
+
+        if (type === 'attendance') {
+            let totalP = 0, totalA = 0, totalH = 0;
+            const rows = staff.map(s => {
+                let p = 0, a = 0, h = 0, off = 0;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const status = (attendance[dateStr] || {})[s.id];
+                    if (status === 'present') p++;
+                    else if (status === 'absent') a++;
+                    else if (status === 'halfday') h++;
+                    else if (status === 'holiday') off++;
+                }
+                totalP += p; totalA += a; totalH += h;
+                return `
+                    <tr class="attendance-row" onclick="ReportsManager.toggleStaffAttendance('${s.id}')" id="row-${s.id}">
                         <td style="padding:1.2rem; display:flex; align-items:center; gap:12px;">
-                            <img src="${o.photo||window.PhotoHelper.avatarUrl(encodeURIComponent(o.name),"3E2723","fff",30)}" alt="${o.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(o.name)}', '3E2723', 'fff', 30)" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
-                            <span style="font-weight:700;">${o.name} <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:8px; opacity:0.3;"></i></span>
+                            <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), '3E2723', 'fff', 30)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', '3E2723', 'fff', 30)" style="width:30px; height:30px; border-radius:8px; object-fit:cover;">
+                            <span style="font-weight:700;">${s.name} <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:8px; opacity:0.3;"></i></span>
                         </td>
-                        <td style="padding:1.2rem;"><span style="color:var(--success); font-weight:700;">${f}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
-                        <td style="padding:1.2rem;"><span style="color:var(--danger); font-weight:700;">${v}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
-                        <td style="padding:1.2rem;"><span style="color:var(--warning); font-weight:700;">${x}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
-                        <td style="padding:1.2rem; font-weight:800; background:rgba(0,0,0,0.02); color:var(--success);">${f+x*.5} <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
+                        <td style="padding:1.2rem;"><span style="color:var(--success); font-weight:700;">${p}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
+                        <td style="padding:1.2rem;"><span style="color:var(--danger); font-weight:700;">${a}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
+                        <td style="padding:1.2rem;"><span style="color:var(--warning); font-weight:700;">${h}</span> <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
+                        <td style="padding:1.2rem; font-weight:800; background:rgba(0,0,0,0.02); color:var(--success);">${p + (h * 0.5)} <span style="font-size:0.7rem; color:var(--text-muted);">Days</span></td>
                         <td style="padding:1.2rem; text-align:right;">
-                            <button class="btn-outline" onclick="event.stopPropagation(); ReportsManager.downloadSingleStaffCalendar('${o.id}', ${r}, ${n}, '${o.name}')" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="Download Calendar">
+                            <button class="btn-outline" onclick="event.stopPropagation(); ReportsManager.downloadSingleStaffCalendar('${s.id}', ${month}, ${year}, '${s.name}')" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="Download Calendar">
                                 <i class="fas fa-download"></i>
                             </button>
                         </td>
                     </tr>
-                    <tr class="details-row" id="details-${o.id}">
+                    <tr class="details-row" id="details-${s.id}">
                         <td colspan="6" style="padding:0;">
                             <div style="padding:1.5rem; text-align:center; border-top:1px solid var(--border);">
-                                <h4 style="font-size:0.9rem; margin-bottom:1rem; color:var(--primary);">Attendance Calendar - ${a[r]} ${n}</h4>
-                                <div id="calendar-export-${o.id}">
-                                    ${ReportsManager.renderStaffCalendar(o.id,r,n)}
+                                <h4 style="font-size:0.9rem; margin-bottom:1rem; color:var(--primary);">Attendance Calendar - ${months[month]} ${year}</h4>
+                                <div id="calendar-export-${s.id}">
+                                    ${ReportsManager.renderStaffCalendar(s.id, month, year)}
                                 </div>
                                 <div style="display:flex; justify-content:center; gap:15px; margin-top:15px; font-size:0.7rem; font-weight:700;">
                                     <span style="display:flex; align-items:center; gap:5px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--success);"></span> Present</span>
@@ -350,7 +648,10 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                             </div>
                         </td>
                     </tr>
-                `}).join("");d.innerHTML=`
+                `;
+            }).join('');
+
+            content.innerHTML = `
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
                         <tr style="background:var(--bg-main);">
@@ -362,25 +663,51 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                             <th style="padding:1.2rem; text-align:right; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Action</th>
                         </tr>
                     </thead>
-                    <tbody>${g}</tbody>
+                    <tbody>${rows}</tbody>
                 </table>
-            `,ReportsManager.restoreExpandedAttendanceRow()}else if(t==="salary"){let c=0,p=0,m=0;const g=s.map(o=>{const f=(S[o.id]||{})[h]||{advance:0,hold:!1,holdDays:0},v=SalaryManager.calculateDaysPresent(o.id,r,n,l),x=SalaryManager.calculateBaseEarned(o,v,r,n),D=((StorageManager.get("fines")||{})[o.id]||[]).filter(w=>{const b=new Date(w.date);return b.getMonth()===r&&b.getFullYear()===n}).reduce((w,b)=>w+b.amount,0),E=((StorageManager.get("overtime")||{})[o.id]||[]).filter(w=>{const b=new Date(w.date);return b.getMonth()===r&&b.getFullYear()===n}).reduce((w,b)=>w+b.amount,0),k=x/(v||1),z=f.hold?k*(f.holdDays||0):0,$=SalaryManager.calculateFinalSalary(o,v,f,o.id,r,n);return`
+            `;
+            ReportsManager.restoreExpandedAttendanceRow();
+        } else if (type === 'salary') {
+            let totalF = 0, totalA = 0, totalO = 0;
+            const rows = staff.map(s => {
+                const adj = (adjustments[s.id] || {})[monthKey] || { advance: 0, hold: false, holdDays: 0 };
+                const daysPresent = SalaryManager.calculateDaysPresent(s.id, month, year, attendance);
+                const earnedSalary = SalaryManager.calculateBaseEarned(s, daysPresent, month, year);
+
+                const mFine = ((StorageManager.get('fines') || {})[s.id] || []).filter(f => {
+                    const d = new Date(f.date);
+                    return d.getMonth() === month && d.getFullYear() === year;
+                }).reduce((sum, f) => sum + f.amount, 0);
+
+                const mOT = ((StorageManager.get('overtime') || {})[s.id] || []).filter(f => {
+                    const d = new Date(f.date);
+                    return d.getMonth() === month && d.getFullYear() === year;
+                }).reduce((sum, f) => sum + f.amount, 0);
+
+                const dayValue = earnedSalary / (daysPresent || 1);
+                const holdAmount = adj.hold ? (dayValue * (adj.holdDays || 0)) : 0;
+                const payout = SalaryManager.calculateFinalSalary(s, daysPresent, adj, s.id, month, year);
+
+                return `
                     <tr style="border-bottom:1px solid var(--border);">
-                        <td style="padding:1rem; font-weight:700;">${o.name}</td>
-                        <td style="padding:1rem;">${ReportsManager.formatSalaryAmountWithHold(o.salaryAmount||0,o)}</td>
-                        <td style="padding:1rem; color:var(--success); font-weight:600;">+\u20B9${E.toLocaleString()}</td>
-                        <td style="padding:1rem; color:var(--danger); font-weight:600;">-\u20B9${D.toLocaleString()}</td>
-                        <td style="padding:1rem; color:var(--danger); font-weight:600;">-\u20B9${(f.advance||0).toLocaleString()}</td>
-                        <td style="padding:1rem; color:var(--warning); font-weight:600;">\u20B9${Math.round(z).toLocaleString()}</td>
-                        <td style="padding:1rem; font-weight:600;">\u20B9${Math.round(x).toLocaleString()}</td>
-                        <td style="padding:1rem; font-weight:800; color:var(--info); background:rgba(9,132,227,0.03);">\u20B9${Math.round($).toLocaleString()}</td>
+                        <td style="padding:1rem; font-weight:700;">${s.name}</td>
+                        <td style="padding:1rem;">${ReportsManager.formatSalaryAmountWithHold(s.salaryAmount || 0, s)}</td>
+                        <td style="padding:1rem; color:var(--success); font-weight:600;">+₹${mOT.toLocaleString()}</td>
+                        <td style="padding:1rem; color:var(--danger); font-weight:600;">-₹${mFine.toLocaleString()}</td>
+                        <td style="padding:1rem; color:var(--danger); font-weight:600;">-₹${(adj.advance || 0).toLocaleString()}</td>
+                        <td style="padding:1rem; color:var(--warning); font-weight:600;">₹${Math.round(holdAmount).toLocaleString()}</td>
+                        <td style="padding:1rem; font-weight:600;">₹${Math.round(earnedSalary).toLocaleString()}</td>
+                        <td style="padding:1rem; font-weight:800; color:var(--info); background:rgba(9,132,227,0.03);">₹${Math.round(payout).toLocaleString()}</td>
                         <td style="padding:1rem; text-align:right;">
-                            <button class="btn-primary" onclick="SalaryManager.showSalarySlipUI('${o.id}', ${r}, ${n})" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="View Slip">
+                            <button class="btn-primary" onclick="SalaryManager.showSalarySlipUI('${s.id}', ${month}, ${year})" style="padding:6px 10px; font-size:0.7rem; border-radius:8px;" title="View Slip">
                                 <i class="fas fa-file-invoice-dollar"></i> Slip
                             </button>
                         </td>
                     </tr>
-                `}).join("");d.innerHTML=`
+                `;
+            }).join('');
+
+            content.innerHTML = `
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
                         <tr style="background:var(--bg-main);">
@@ -395,42 +722,62 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                             <th style="padding:1rem; text-align:right; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Action</th>
                         </tr>
                     </thead>
-                    <tbody>${g}</tbody>
-                </table>`}else if(t==="advances"){const c=StorageManager.get("advances")||{};let p=[];s.forEach(m=>{(c[m.id]||[]).filter(g=>{const o=new Date(g.date);return o.getMonth()===r&&o.getFullYear()===n}).forEach(g=>p.push({...g,staffName:m.name}))}),d.innerHTML=`<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:var(--bg-main);"><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Date</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Staff</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Type</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Amount</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Remark</th></tr></thead><tbody>${p.map(m=>`<tr><td style="padding:1.2rem;">${new Date(m.date).toLocaleDateString()}</td><td style="padding:1.2rem; font-weight:700;">${m.staffName}</td><td style="padding:1.2rem;"><span class="badge ${m.type==="paid"?"badge-danger":"badge-success"}">${m.type.toUpperCase()}</span></td><td style="padding:1.2rem; font-weight:800;">\u20B9${m.amount.toLocaleString()}</td><td style="padding:1.2rem; color:var(--text-muted); font-size:0.85rem;">${m.remark||"---"}</td></tr>`).join("")}</tbody></table>`}else if(t==="slips"){const c=s.map(p=>{const m=M[String(p.id)],g=ReportsManager.getPayrollStatusMeta(m?.status),o=g.generated;return`
+                    <tbody>${rows}</tbody>
+                </table>`;
+        } else if (type === 'advances') {
+            const allAdvances = StorageManager.get('advances') || {};
+            let logs = [];
+            staff.forEach(s => {
+                (allAdvances[s.id] || []).filter(a => {
+                    const d = new Date(a.date);
+                    return d.getMonth() === month && d.getFullYear() === year;
+                }).forEach(a => logs.push({ ...a, staffName: s.name }));
+            });
+            content.innerHTML = `<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:var(--bg-main);"><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Date</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Staff</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Type</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Amount</th><th style="padding:1.2rem; text-align:left; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Remark</th></tr></thead><tbody>${logs.map(l => `<tr><td style="padding:1.2rem;">${new Date(l.date).toLocaleDateString()}</td><td style="padding:1.2rem; font-weight:700;">${l.staffName}</td><td style="padding:1.2rem;"><span class="badge ${l.type === 'paid' ? 'badge-danger' : 'badge-success'}">${l.type.toUpperCase()}</span></td><td style="padding:1.2rem; font-weight:800;">₹${l.amount.toLocaleString()}</td><td style="padding:1.2rem; color:var(--text-muted); font-size:0.85rem;">${l.remark || '---'}</td></tr>`).join('')}</tbody></table>`;
+        } else if (type === 'slips') {
+            const rows = staff.map(s => {
+                const payrollRecord = payrollByEmployee[String(s.id)];
+                const statusMeta = ReportsManager.getPayrollStatusMeta(payrollRecord?.status);
+                const isGenerated = statusMeta.generated;
+
+                return `
                     <tr>
                         <td style="padding:1.2rem;">
                             <div style="display:flex; align-items:center; gap:12px;">
-                                <img src="${p.photo||window.PhotoHelper.avatarUrl(encodeURIComponent(p.name),"3E2723","fff",35)}" alt="${p.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(p.name)}', '3E2723', 'fff', 35)" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
+                                <img src="${s.photo || window.PhotoHelper.avatarUrl(encodeURIComponent(s.name), '3E2723', 'fff', 35)}" alt="${s.name} profile photo" onerror="window.PhotoHelper.applyFallback(this, '${encodeURIComponent(s.name)}', '3E2723', 'fff', 35)" style="width:35px; height:35px; border-radius:10px; object-fit:cover;">
                                 <div>
-                                    <div style="font-weight:700;">${p.name}</div>
-                                    <div style="font-size:0.75rem; color:var(--text-muted);">${p.role}</div>
+                                    <div style="font-weight:700;">${s.name}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted);">${s.role}</div>
                                 </div>
                             </div>
                         </td>
                         <td style="padding:1.2rem;">
-                            ${g.html}
+                            ${statusMeta.html}
                         </td>
                         <td style="padding:1.2rem; text-align:right;">
                             <div style="display:flex; justify-content:flex-end; gap:8px;">
-                                <button class="btn-primary" onclick="${o?`SalaryManager.showSalarySlipUI('${p.id}', ${r}, ${n})`:"return false"}"
-                                    style="${ReportsManager.getSlipActionButtonStyle(o,"var(--primary)")}"
-                                    ${o?"":"disabled"} title="View Slip">
+                                <button class="btn-primary" onclick="${isGenerated ? `SalaryManager.showSalarySlipUI('${s.id}', ${month}, ${year})` : 'return false'}"
+                                    style="${ReportsManager.getSlipActionButtonStyle(isGenerated, 'var(--primary)')}"
+                                    ${!isGenerated ? 'disabled' : ''} title="View Slip">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn-primary" onclick="${o?`SalaryManager.showSalarySlipUI('${p.id}', ${r}, ${n}); setTimeout(() => SalaryManager.printSlip(), 500);`:"return false"}"
-                                    style="${ReportsManager.getSlipActionButtonStyle(o,"#0984e3")}"
-                                    ${o?"":"disabled"} title="Download/Print">
+                                <button class="btn-primary" onclick="${isGenerated ? `SalaryManager.showSalarySlipUI('${s.id}', ${month}, ${year}); setTimeout(() => SalaryManager.printSlip(), 500);` : 'return false'}"
+                                    style="${ReportsManager.getSlipActionButtonStyle(isGenerated, '#0984e3')}"
+                                    ${!isGenerated ? 'disabled' : ''} title="Download/Print">
                                     <i class="fas fa-print"></i>
                                 </button>
-                                <button class="btn-primary" onclick="${o?`ReportsManager.handleShareSlip('${p.id}', ${r}, ${n}, '${h}', '${a[r]}')`:"return false"}"
-                                    style="${ReportsManager.getSlipActionButtonStyle(o,"#25D366")}"
-                                    ${o?"":"disabled"} title="Share on WhatsApp">
+                                <button class="btn-primary" onclick="${isGenerated ? `ReportsManager.handleShareSlip('${s.id}', ${month}, ${year}, '${monthKey}', '${months[month]}')` : 'return false'}"
+                                    style="${ReportsManager.getSlipActionButtonStyle(isGenerated, '#25D366')}"
+                                    ${!isGenerated ? 'disabled' : ''} title="Share on WhatsApp">
                                     <i class="fab fa-whatsapp"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
-                `}).join("");d.innerHTML=`
+                `;
+            }).join('');
+
+            content.innerHTML = `
                 <table style="width:100%; border-collapse:collapse;">
                     <thead>
                         <tr style="background:var(--bg-main);">
@@ -440,24 +787,157 @@ const ReportsManager={currentAttendanceReport:[],currentAttendanceMap:{},current
                         </tr>
                     </thead>
                     <tbody>
-                        ${s.length===0?'<tr><td colspan="3" style="padding:3rem; text-align:center; color:var(--text-muted);">No staff found matching the criteria.</td></tr>':c}
+                        ${staff.length === 0 ? '<tr><td colspan="3" style="padding:3rem; text-align:center; color:var(--text-muted);">No staff found matching the criteria.</td></tr>' : rows}
                     </tbody>
                 </table>
-            `}},toggleStaffAttendance:t=>{const e=document.getElementById(`row-${t}`),a=document.getElementById(`details-${t}`);if(!e||!a)return;const d=a.classList.contains("active");document.querySelectorAll(".details-row").forEach(i=>i.classList.remove("active")),document.querySelectorAll(".attendance-row").forEach(i=>i.classList.remove("active")),d?ReportsManager.currentExpandedAttendanceStaffId=null:(ReportsManager.currentExpandedAttendanceStaffId=String(t),e.classList.add("active"),a.classList.add("active"))},restoreExpandedAttendanceRow:()=>{const t=ReportsManager.currentExpandedAttendanceStaffId;if(!t)return;const e=document.getElementById(`row-${t}`),a=document.getElementById(`details-${t}`);!e||!a||(e.classList.add("active"),a.classList.add("active"))},renderStaffCalendar:(t,e,a)=>{const d=ReportsManager.currentAttendanceMap||{},i=new Date(a,e+1,0).getDate();let r='<div class="calendar-grid">';const n=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];for(let s=1;s<=i;s++){const l=new Date(a,e,s),S=n[l.getDay()],A=`${a}-${String(e+1).padStart(2,"0")}-${String(s).padStart(2,"0")}`,u=(d[A]||{})[t];let h="";u==="present"?h="day-present":u==="absent"?h="day-absent":u==="halfday"?h="day-half":u==="holiday"&&(h="day-off"),r+=`
-                <div class="calendar-day ${h}" title="${s} ${u||"No Data"}">
-                    <div>${s}</div>
-                    <span>${S}</span>
+            `;
+        }
+    },
+
+    toggleStaffAttendance: (staffId) => {
+        const row = document.getElementById(`row-${staffId}`);
+        const details = document.getElementById(`details-${staffId}`);
+        if (!row || !details) return;
+        const isVisible = details.classList.contains('active');
+
+        // Close others
+        document.querySelectorAll('.details-row').forEach(d => d.classList.remove('active'));
+        document.querySelectorAll('.attendance-row').forEach(r => r.classList.remove('active'));
+
+        if (!isVisible) {
+            ReportsManager.currentExpandedAttendanceStaffId = String(staffId);
+            row.classList.add('active');
+            details.classList.add('active');
+        } else {
+            ReportsManager.currentExpandedAttendanceStaffId = null;
+        }
+    },
+
+    restoreExpandedAttendanceRow: () => {
+        const staffId = ReportsManager.currentExpandedAttendanceStaffId;
+        if (!staffId) return;
+        const row = document.getElementById(`row-${staffId}`);
+        const details = document.getElementById(`details-${staffId}`);
+        if (!row || !details) return;
+        row.classList.add('active');
+        details.classList.add('active');
+    },
+
+    renderStaffCalendar: (staffId, month, year) => {
+        const attendance = ReportsManager.currentAttendanceMap || {};
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let html = '<div class="calendar-grid">';
+        const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        // Days loop without offset
+        for (let d = 1; d <= daysInMonth; d++) {
+            const currentDayDate = new Date(year, month, d);
+            const dayName = weekDays[currentDayDate.getDay()];
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const status = (attendance[dateStr] || {})[staffId];
+
+            let statusClass = '';
+            if (status === 'present') statusClass = 'day-present';
+            else if (status === 'absent') statusClass = 'day-absent';
+            else if (status === 'halfday') statusClass = 'day-half';
+            else if (status === 'holiday') statusClass = 'day-off';
+
+            html += `
+                <div class="calendar-day ${statusClass}" title="${d} ${status || 'No Data'}">
+                    <div>${d}</div>
+                    <span>${dayName}</span>
                 </div>
-            `}return r+="</div>",r},handleShareSlip:async(t,e,a,d,i)=>{try{const r=await ApiClient.getPayrollSummary(Number(t),e+1,a),n=SalaryManager.getSlipDataFromSummary(r,e,a);if(!n){window.showAlert("Backend salary slip data unavailable");return}SalaryManager.shareWhatsApp(n.staff.name,n.finalSalary,i,{p:n.presentDays,a:n.absentDays,h:n.halfDays,ot:n.adj.overtime||0,fine:n.monthlyFine||0,adv:n.adj.advance||0,bal:n.advBalance||0})}catch(r){window.showAlert(`Backend salary slip data unavailable: ${r.message}`)}},downloadTableAsPDF:async t=>{const e=document.getElementById("report-content"),a=parseInt(document.getElementById("report-month").value),d=parseInt(document.getElementById("report-year").value),i=["January","February","March","April","May","June","July","August","September","October","November","December"],r=e.querySelectorAll("button, .action-cell, th:last-child, td:last-child");r.forEach(l=>l.style.display="none");const n={margin:.3,filename:`${t.charAt(0).toUpperCase()+t.slice(1)}_Report_${i[a]}_${d}.pdf`,image:{type:"jpeg",quality:.98},html2canvas:{scale:2,useCORS:!0},jsPDF:{unit:"in",format:"letter",orientation:["attendance","salary"].includes(t)?"landscape":"portrait"}};window.showAlert(`Generating ${t} report PDF...`),(await window.loadHtml2Pdf())().set(n).from(e).save().then(()=>{r.forEach(l=>l.style.display="")})},downloadSingleStaffCalendar:async(t,e,a,d)=>{const i=document.getElementById(`calendar-export-${t}`),r=["January","February","March","April","May","June","July","August","September","October","November","December"],n=document.createElement("div");n.style.padding="40px",n.style.background="#fff",n.style.fontFamily="var(--app-font)",n.innerHTML=`
+            `;
+        }
+
+        html += '</div>';
+        return html;
+    },
+
+    handleShareSlip: async (staffId, month, year, monthKey, monthName) => {
+        try {
+            const summary = await ApiClient.getPayrollSummary(Number(staffId), month + 1, year);
+            const slip = SalaryManager.getSlipDataFromSummary(summary, month, year);
+            if (!slip) {
+                window.showAlert('Backend salary slip data unavailable');
+                return;
+            }
+
+            SalaryManager.shareWhatsApp(slip.staff.name, slip.finalSalary, monthName, {
+                p: slip.presentDays,
+                a: slip.absentDays,
+                h: slip.halfDays,
+                ot: slip.adj.overtime || 0,
+                fine: slip.monthlyFine || 0,
+                adv: slip.adj.advance || 0,
+                bal: slip.advBalance || 0
+            });
+        } catch (error) {
+            window.showAlert(`Backend salary slip data unavailable: ${error.message}`);
+        }
+    },
+
+    downloadTableAsPDF: async (type) => {
+        const element = document.getElementById('report-content');
+        const month = parseInt(document.getElementById('report-month').value);
+        const year = parseInt(document.getElementById('report-year').value);
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // Temporarily hide action buttons and columns for clean PDF
+        const buttons = element.querySelectorAll('button, .action-cell, th:last-child, td:last-child');
+        buttons.forEach(btn => btn.style.display = 'none');
+
+        const opt = {
+            margin: 0.3,
+            filename: `${type.charAt(0).toUpperCase() + type.slice(1)}_Report_${months[month]}_${year}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'letter', orientation: (['attendance', 'salary'].includes(type) ? 'landscape' : 'portrait') }
+        };
+
+        window.showAlert(`Generating ${type} report PDF...`);
+        const html2pdf = await window.loadHtml2Pdf();
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Restore buttons
+            buttons.forEach(btn => btn.style.display = '');
+        });
+    },
+
+    downloadSingleStaffCalendar: async (staffId, month, year, name) => {
+        const element = document.getElementById(`calendar-export-${staffId}`);
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        // Wrap in a temporary branded div for better PDF look
+        const wrapper = document.createElement('div');
+        wrapper.style.padding = '40px';
+        wrapper.style.background = '#fff';
+        wrapper.style.fontFamily = "var(--app-font)";
+        wrapper.innerHTML = `
             <div style="text-align:center; margin-bottom:30px; border-bottom:2px solid #3E2723; padding-bottom:15px;">
                 <h1 style="color:#3E2723; margin:0;">CAFE PREMIUM</h1>
-                <p style="margin:5px 0; font-weight:700;">Attendance Calendar: ${d}</p>
-                <p style="color:#666; font-size:0.9rem;">${r[e]} ${a}</p>
+                <p style="margin:5px 0; font-weight:700;">Attendance Calendar: ${name}</p>
+                <p style="color:#666; font-size:0.9rem;">${months[month]} ${year}</p>
             </div>
-            ${i.innerHTML}
+            ${element.innerHTML}
             <div style="display:flex; justify-content:center; gap:15px; margin-top:30px; font-size:0.8rem; font-weight:700;">
                 <span style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:50%; background:#00b894;"></span> Present</span>
                 <span style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:50%; background:#d63031;"></span> Absent</span>
                 <span style="display:flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:50%; background:#fdcb6e;"></span> Half Day</span>
             </div>
-        `;const s={margin:.5,filename:`Attendance_${d}_${r[e]}_${a}.pdf`,image:{type:"jpeg",quality:.98},html2canvas:{scale:2},jsPDF:{unit:"in",format:"letter",orientation:"portrait"}};(await window.loadHtml2Pdf())().set(s).from(n).save()}};window.ReportsManager=ReportsManager;
+        `;
+
+        const opt = {
+            margin: 0.5,
+            filename: `Attendance_${name}_${months[month]}_${year}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+
+        const html2pdf = await window.loadHtml2Pdf();
+        html2pdf().set(opt).from(wrapper).save();
+    }
+};
+
+window.ReportsManager = ReportsManager;

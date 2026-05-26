@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-admin-v2';
+const CACHE_NAME = 'employee-admin-v6';
 const APP_SHELL = [
   '/employee-admin/attendance.html',
   '/employee-admin/index.html',
@@ -10,7 +10,7 @@ const APP_SHELL = [
   '/employee-admin/style.min.css?v=20260525-1',
   '/employee-admin/env.js?v=20260427-1',
   '/employee-admin/js/min/storage.js?v=20260525-3',
-  '/employee-admin/js/min/api.js?v=20260525-9',
+  '/employee-admin/js/min/api.js?v=20260526-2',
   '/employee-admin/js/min/theme.js?v=20260313-1',
   '/employee-admin/js/min/auth.js?v=20260525-11',
   '/employee-admin/js/min/main.js?v=20260525-13',
@@ -43,7 +43,14 @@ self.addEventListener('fetch', (event) => {
 
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/employee-api/')) return;
+  if (
+    url.pathname.startsWith('/api/')
+    || url.pathname.startsWith('/employee-api/')
+    || url.pathname.startsWith('/index.php/api/')
+    || url.search.includes('route=/api/')
+  ) {
+    return;
+  }
 
   event.respondWith(
     fetch(request)
