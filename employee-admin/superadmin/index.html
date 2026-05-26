@@ -712,6 +712,89 @@
             padding: 18px 24px 24px;
         }
 
+        .field-invalid input,
+        .field-invalid select,
+        .field-invalid .custom-select-trigger,
+        .field-invalid .custom-date-trigger {
+            border-color: rgba(220, 38, 38, .55);
+            background: #fffafa;
+            box-shadow: 0 0 0 4px rgba(220, 38, 38, .08);
+        }
+
+        .field-error {
+            margin-top: 6px;
+            color: var(--danger);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        #alert-dialog {
+            width: min(430px, calc(100vw - 28px));
+        }
+
+        .alert-card {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: #fff;
+            box-shadow: 0 30px 80px rgba(24, 19, 16, .24);
+        }
+
+        .alert-head {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 22px 22px 14px;
+        }
+
+        .alert-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 14px;
+            color: #b91c1c;
+            background: var(--danger-soft);
+        }
+
+        .alert-title {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+
+        .alert-message {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .alert-list {
+            display: grid;
+            gap: 8px;
+            margin: 0 22px 4px;
+            padding: 0;
+            list-style: none;
+        }
+
+        .alert-list li {
+            padding: 10px 12px;
+            border: 1px solid #f3d6d6;
+            border-radius: 12px;
+            color: #8f1d1d;
+            font-size: 13px;
+            font-weight: 700;
+            background: #fff7f7;
+        }
+
+        .alert-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 18px 22px 22px;
+        }
+
         @media (max-width: 920px) {
             .shell { grid-template-columns: 1fr; }
             .sidebar {
@@ -1279,6 +1362,22 @@
         </div>
     </dialog>
 
+    <dialog id="alert-dialog">
+        <div class="alert-card">
+            <div class="alert-head">
+                <div class="alert-icon"><i class="fas fa-triangle-exclamation"></i></div>
+                <div>
+                    <h2 class="alert-title" id="alert-title">Form Error</h2>
+                    <p class="alert-message" id="alert-message">Please check the highlighted fields.</p>
+                </div>
+            </div>
+            <ul class="alert-list hidden" id="alert-list"></ul>
+            <div class="alert-actions">
+                <button class="btn btn-primary" onclick="closeAlert()">OK</button>
+            </div>
+        </div>
+    </dialog>
+
     <script>
         const api = '/api/v1';
         const tokenKey = 'employee_superadmin_token';
@@ -1286,6 +1385,110 @@
         let users = [];
         let currentPage = 1;
         let calendarMonth = new Date();
+        const fieldLabels = {
+            username: 'Business/User Name',
+            owner_name: 'Owner Name',
+            mobile: 'Mobile',
+            email: 'Email',
+            password: 'Password',
+            status: 'Status',
+            created_at: 'Creation Date',
+            address: 'Address'
+        };
+
+        function showAlertPopup(title, message, items = []) {
+            const dialog = document.getElementById('alert-dialog');
+            const list = document.getElementById('alert-list');
+            document.getElementById('alert-title').textContent = title || 'Form Error';
+            document.getElementById('alert-message').textContent = message || 'Please check the highlighted fields.';
+            list.innerHTML = (items || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+            list.classList.toggle('hidden', !items || items.length === 0);
+            if (dialog.open) dialog.close();
+            dialog.showModal();
+        }
+
+        function closeAlert() {
+            document.getElementById('alert-dialog')?.close();
+        }
+
+        function flattenErrors(errors) {
+            if (!errors) return [];
+            if (Array.isArray(errors)) return errors.map((item) => String(item));
+            if (typeof errors === 'object') {
+                return Object.entries(errors).flatMap(([field, value]) => {
+                    const label = fieldLabels[field] || field;
+                    const messages = Array.isArray(value) ? value : [value];
+                    return messages.map((message) => `${label}: ${message}`);
+                });
+            }
+            return [String(errors)];
+        }
+
+        function showRequestError(error, title = 'Request Failed') {
+            const items = flattenErrors(error.errors);
+            showAlertPopup(title, error.message || 'Something went wrong. Please try again.', items);
+        }
+
+        function fieldWrapper(fieldId) {
+            return document.getElementById(fieldId)?.closest('.grid > div');
+        }
+
+        function clearFormErrors() {
+            document.querySelectorAll('.field-invalid').forEach((el) => el.classList.remove('field-invalid'));
+            document.querySelectorAll('.field-error').forEach((el) => el.remove());
+        }
+
+        function setFieldError(fieldId, message) {
+            const wrapper = fieldWrapper(fieldId);
+            if (!wrapper) return;
+            wrapper.classList.add('field-invalid');
+            const error = document.createElement('div');
+            error.className = 'field-error';
+            error.textContent = message;
+            wrapper.appendChild(error);
+        }
+
+        function validateUserForm(isEdit) {
+            clearFormErrors();
+            const errors = [];
+            const required = [
+                ['username', 'Business/User Name is required'],
+                ['mobile', 'Mobile is required'],
+                ['email', 'Email is required']
+            ];
+
+            if (!isEdit) {
+                required.push(['password', 'Password is required']);
+            }
+
+            required.forEach(([field, message]) => {
+                if (!document.getElementById(field)?.value.trim()) {
+                    errors.push(message);
+                    setFieldError(field, message);
+                }
+            });
+
+            const email = document.getElementById('email')?.value.trim();
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                const message = 'Email format is not valid';
+                errors.push(message);
+                setFieldError('email', message);
+            }
+
+            const password = document.getElementById('password')?.value.trim();
+            if (password && password.length < 6) {
+                const message = 'Password must be at least 6 characters';
+                errors.push(message);
+                setFieldError('password', message);
+            }
+
+            if (errors.length > 0) {
+                showAlertPopup('Form Error', 'Please fix these fields before saving.', errors);
+                return false;
+            }
+
+            return true;
+        }
 
         function initCustomControls() {
             setupCustomSelect('status-filter');
@@ -1454,8 +1657,18 @@
 
         async function request(path, options = {}) {
             const response = await fetch(`${api}${path}`, { ...options, headers: { ...headers(), ...(options.headers || {}) } });
-            const payload = await response.json();
-            if (!response.ok || payload.status === false) throw new Error(payload.message || 'Request failed');
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (error) {
+                payload = { message: 'Server response could not be read.' };
+            }
+            if (!response.ok || payload.status === false) {
+                const error = new Error(payload.message || 'Request failed');
+                error.status = response.status;
+                error.errors = payload.errors || null;
+                throw error;
+            }
             return payload.data;
         }
 
@@ -1472,7 +1685,7 @@
                 showAppShell();
                 await loadUsers();
             } catch (error) {
-                alert(error.message);
+                showRequestError(error, 'Login Failed');
             }
         }
 
@@ -1597,6 +1810,7 @@
         }
 
         function openUserModal(id = null) {
+            clearFormErrors();
             const user = users.find((item) => Number(item.id) === Number(id)) || {};
             document.getElementById('dialog-title').textContent = id ? 'Edit User' : 'New User';
             document.getElementById('dialog-subtitle').textContent = id ? 'Update user details and access status.' : 'Create business access for a client workspace.';
@@ -1622,14 +1836,20 @@
 
         async function saveUser() {
             const id = document.getElementById('user-id').value;
+            if (!validateUserForm(Boolean(id))) return;
+
             const body = {};
             for (const key of ['username','owner_name','mobile','email','password','status','created_at','address']) {
                 const value = document.getElementById(key).value.trim();
                 if (value) body[key] = value;
             }
-            await request(id ? `/superadmin/users/${id}` : '/superadmin/users', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
-            closeUserModal();
-            await loadUsers();
+            try {
+                await request(id ? `/superadmin/users/${id}` : '/superadmin/users', { method: id ? 'PUT' : 'POST', body: JSON.stringify(body) });
+                closeUserModal();
+                await loadUsers();
+            } catch (error) {
+                showRequestError(error, id ? 'Update Failed' : 'User Not Created');
+            }
         }
 
         async function toggleUser(id) {
