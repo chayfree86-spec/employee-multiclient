@@ -1,0 +1,64 @@
+const CACHE_NAME = 'employee-admin-v2';
+const APP_SHELL = [
+  '/employee-admin/attendance.html',
+  '/employee-admin/index.html',
+  '/employee-admin/staff.html',
+  '/employee-admin/salary.html',
+  '/employee-admin/reports.html',
+  '/employee-admin/settings.html',
+  '/employee-admin/manifest.webmanifest',
+  '/employee-admin/style.min.css?v=20260525-1',
+  '/employee-admin/env.js?v=20260427-1',
+  '/employee-admin/js/min/storage.js?v=20260525-3',
+  '/employee-admin/js/min/api.js?v=20260525-9',
+  '/employee-admin/js/min/theme.js?v=20260313-1',
+  '/employee-admin/js/min/auth.js?v=20260525-11',
+  '/employee-admin/js/min/main.js?v=20260525-13',
+  '/employee-admin/icons/icon-192.png',
+  '/employee-admin/icons/icon-512.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys
+          .filter((key) => key.startsWith('employee-admin-') && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  const url = new URL(request.url);
+
+  if (request.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/employee-api/')) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => {
+        if (cached) return cached;
+        if (request.mode === 'navigate') {
+          return caches.match('/employee-admin/attendance.html');
+        }
+        return null;
+      }))
+  );
+});
