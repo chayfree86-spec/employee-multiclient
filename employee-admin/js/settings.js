@@ -511,6 +511,10 @@ const SettingsManager = {
             if (badge) {
                 badge.textContent = savedMode === 'per_day' ? 'Per Day (Calendar)' : `Monthly (${savedDays} days)`;
             }
+            // Refresh salary list if on salary page
+            if (typeof SalaryManager !== 'undefined' && document.getElementById('salary-list')) {
+                await SalaryManager.refreshSalaryList();
+            }
             window.showAlert(savedMode === 'per_day' ? 'Payroll mode set to Per Day (actual calendar days)' : `Payroll mode set to Monthly (${savedDays} days)`);
         } catch (e) {
             window.showAlert('Failed to save payroll mode: ' + (e.message || 'Unknown error'));

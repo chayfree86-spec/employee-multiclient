@@ -118,6 +118,9 @@ const SalaryManager = {
                     <div>
                         <h1 style="font-size:2rem; font-weight:700; color:var(--text-main); margin-bottom:0.5rem;">Salary Dashboard</h1>
                         <p style="color:var(--text-muted); font-weight:600;">Manage monthly payroll and deductions</p>
+                        <div id="salary-payroll-mode-badge" style="margin-top:8px; display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:var(--bg-main); border:1px solid var(--border); font-size:0.78rem; font-weight:700; color:var(--info);">
+                            <i class="fas fa-calculator"></i> <span id="salary-mode-text">Loading...</span>
+                        </div>
                     </div>
                     <div class="salary-filter-bar" style="display:flex; align-items:center; gap:0.5rem; background:var(--bg-card); padding:8px; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
                         <div class="salary-filter-control" style="position:relative; display:flex; align-items:center;">
@@ -604,6 +607,21 @@ const SalaryManager = {
         if (delBtn) {
             delBtn.style.display = anyGenerated ? 'block' : 'none';
         }
+
+        // Update payroll mode badge in header
+        SalaryManager.updatePayrollModeBadge(month, year);
+    },
+
+    updatePayrollModeBadge: (month, year) => {
+        const badgeText = document.getElementById('salary-mode-text');
+        if (!badgeText) return;
+        const settings = StorageManager.get('payroll_settings') || {};
+        const mode = settings.payroll_mode || 'monthly';
+        const monthlyDays = Number(settings.monthly_days || 30) || 30;
+        const actualDays = new Date(year, month + 1, 0).getDate();
+        const divisor = window.PayrollSettings.getDaysDivisor(month + 1, year);
+        const displayMode = mode === 'per_day' ? 'Per Day (Calendar)' : `Monthly (Fixed ${monthlyDays} Days)`;
+        badgeText.textContent = `${displayMode} | Divisor: ${divisor} days | Calendar: ${actualDays} days`;
     },
 
     calculateDaysPresent: (staffId, month, year, attendance) => {
