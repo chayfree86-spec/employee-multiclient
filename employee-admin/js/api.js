@@ -260,8 +260,14 @@ const ApiClient = {
         });
     },
 
-    listAof() {
-        return this.request('/aof');
+    listAof(month = null, year = null, employeeId = null, type = null) {
+        const query = new URLSearchParams();
+        if (month !== null && month !== undefined) query.set('month', month);
+        if (year !== null && year !== undefined) query.set('year', year);
+        if (employeeId !== null && employeeId !== undefined) query.set('employee_id', employeeId);
+        if (type !== null && type !== undefined) query.set('type', type);
+        const qs = query.toString();
+        return this.request(qs ? `/aof?${qs}` : '/aof');
     },
 
     getAofSummary(employeeId) {

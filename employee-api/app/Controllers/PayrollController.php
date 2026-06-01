@@ -119,6 +119,7 @@ class PayrollController extends BaseApiController
 
         $settingsModel = new \EmployeeApi\Models\SettingsModel();
         $daysDivisor = $settingsModel->getDaysDivisor((int)$month, (int)$year);
+        $payrollMode = $settingsModel->getSetting('payroll_mode', 'monthly');
         $attendanceModel = new \EmployeeApi\Models\AttendanceModel();
         $rawAttendance = $attendanceModel->getMonthlyAttendanceEnriched((int)$employeeId, (int)$month, (int)$year, $employee['join_date'] ?? null);
         $presentDays = 0.0;
@@ -142,7 +143,12 @@ class PayrollController extends BaseApiController
         $workingDays = $presentDays + ($halfDays * 0.5) + $holidayDays;
         $baseSalary = (float)($employee['monthly_salary'] ?? $estimated['base_salary'] ?? 0);
         $dailyRate = $daysDivisor > 0 ? ($baseSalary / $daysDivisor) : 0;
-        $earnedSalary = round($dailyRate * $workingDays, 0);
+        $markedAttendanceDays = $presentDays + $halfDays + $absentDays;
+        if ($payrollMode === 'monthly' && $markedAttendanceDays > 0) {
+            $earnedSalary = max(0, round($baseSalary - ($absentDays * $dailyRate) - ($halfDays * $dailyRate * 0.5), 0));
+        } else {
+            $earnedSalary = round($dailyRate * $workingDays, 0);
+        }
         $holdDeduction = $releaseHoldRequested ? 0.0 : round((float)($holdInfo['total_hold_amount'] ?? 0), 0);
         $holdRelease = $releaseHoldRequested ? round((float)($holdInfo['total_hold_amount'] ?? 0), 0) : 0.0;
 

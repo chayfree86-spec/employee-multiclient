@@ -76,7 +76,13 @@ class PayrollModel extends Model
         $dailySalary = $workingDaysInMonth > 0 ? (float)($baseSalary / $workingDaysInMonth) : 0;
         $weekendHolidayDays = $holidayDays + $weekendDays;
         $weekendAbsentDays = 0;
-        $salaryFromAttendance = (float)round(($presentDays * $dailySalary) + ($halfDays * $dailySalary * 0.5) + ($weekendHolidayDays * $dailySalary), 0);
+        $payrollMode = $settingsModel->getSetting('payroll_mode', 'monthly');
+        $markedAttendanceDays = $presentDays + $halfDays + $absentDays;
+        if ($payrollMode === 'monthly' && $markedAttendanceDays > 0) {
+            $salaryFromAttendance = (float) round($baseSalary - ($absentDays * $dailySalary) - ($halfDays * $dailySalary * 0.5), 0);
+        } else {
+            $salaryFromAttendance = (float)round(($presentDays * $dailySalary) + ($halfDays * $dailySalary * 0.5) + ($weekendHolidayDays * $dailySalary), 0);
+        }
         $weekendHolidayAmount = 0;
 
         $totalSalary = $salaryFromAttendance + $weekendHolidayAmount + (float) $overtime - (float) $fine - (float) $advanceDeduction - (float) $deduction;

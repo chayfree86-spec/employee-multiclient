@@ -635,7 +635,7 @@ const StaffManager = {
                 ApiClient.listEmployees(),
                 ApiClient.getPayrollSummary(Number(staffId), paymentMonth + 1, paymentYear),
                 ApiClient.getAttendanceByEmployeeMonth(Number(staffId), paymentMonth + 1, paymentYear),
-                ApiClient.listAof()
+                ApiClient.listAof(paymentMonth + 1, paymentYear, staffId)
             ]);
             StaffManager.currentStaffList = (employees || []).map((employee) => ApiSyncManager.normalizeEmployee(employee));
             staff = StaffManager.currentStaffList.find(s => String(s.id) === String(staffId));

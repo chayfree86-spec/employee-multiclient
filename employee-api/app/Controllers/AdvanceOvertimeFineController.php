@@ -17,10 +17,14 @@ class AdvanceOvertimeFineController extends BaseApiController
         $model = new AdvanceOvertimeFineModel();
         $employee_id = $this->request->getGet('employee_id');
         $type = $this->request->getGet('type'); // advance, overtime, fine
+        $month = $this->request->getGet('month');
+        $year = $this->request->getGet('year');
 
         $query = $model->where('user_id', $userId);
         if ($employee_id) $query = $query->where('employee_id', $employee_id);
         if ($type) $query = $query->where('type', $type);
+        if ($month) $query = $query->where('MONTH(date)', (int) $month);
+        if ($year) $query = $query->where('YEAR(date)', (int) $year);
 
         $results = $query->orderBy('date', 'DESC')->findAll();
         return $this->respondSuccess($results, 'Records retrieved');
