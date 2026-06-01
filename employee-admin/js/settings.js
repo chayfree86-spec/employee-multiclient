@@ -500,12 +500,18 @@ const SettingsManager = {
         try {
             const updated = await ApiClient.updateSettings({ payroll_mode: mode, monthly_days: String(daysNum) });
             SettingsManager.currentSettings = updated || await SettingsManager.loadBackendSettings(true);
-            StorageManager.saveLocal('payroll_settings', { payroll_mode: mode, monthly_days: String(daysNum) });
+            const savedMode = SettingsManager.currentSettings?.payroll_mode || mode;
+            const savedDays = SettingsManager.currentSettings?.monthly_days || String(daysNum);
+            StorageManager.saveLocal('payroll_settings', { payroll_mode: savedMode, monthly_days: savedDays });
+            const selectedSalary = window.SalaryManager?.getSelectedMonthYear?.();
+            if (selectedSalary?.month !== undefined && selectedSalary?.year !== undefined) {
+                await window.ApiSyncManager?.syncMonth?.(selectedSalary.month + 1, selectedSalary.year, true);
+            }
             const badge = document.getElementById('payroll-mode-badge');
             if (badge) {
-                badge.textContent = mode === 'per_day' ? 'Per Day (Calendar)' : `Monthly (${daysNum} days)`;
+                badge.textContent = savedMode === 'per_day' ? 'Per Day (Calendar)' : `Monthly (${savedDays} days)`;
             }
-            window.showAlert(mode === 'per_day' ? 'Payroll mode set to Per Day (actual calendar days)' : `Payroll mode set to Monthly (${daysNum} days)`);
+            window.showAlert(savedMode === 'per_day' ? 'Payroll mode set to Per Day (actual calendar days)' : `Payroll mode set to Monthly (${savedDays} days)`);
         } catch (e) {
             window.showAlert('Failed to save payroll mode: ' + (e.message || 'Unknown error'));
         }
