@@ -4,7 +4,29 @@ const StaffManager = {
     currentStaffList: [],
     currentAofRows: [],
 
-    initDatePicker: (selector, options = {}) => {
+    ensureFlatpickr: () => {
+        if (typeof flatpickr === 'function') return Promise.resolve();
+        if (StaffManager._flatpickrPromise) return StaffManager._flatpickrPromise;
+        const cssHref = 'assets/lib/flatpickr/flatpickr.min.css?v=20260525-1';
+        if (!document.querySelector('link[href="' + cssHref + '"]')) {
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = cssHref;
+            document.head.appendChild(css);
+        }
+        StaffManager._flatpickrPromise = new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'assets/lib/flatpickr/flatpickr.min.js?v=20260525-1';
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.body.appendChild(script);
+        });
+        return StaffManager._flatpickrPromise;
+    },
+
+    initDatePicker: async (selector, options = {}) => {
+        await StaffManager.ensureFlatpickr();
         if (typeof flatpickr !== 'function') return null;
 
         const userOnReady = options.onReady;

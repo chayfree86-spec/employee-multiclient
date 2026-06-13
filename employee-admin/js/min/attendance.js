@@ -241,9 +241,20 @@ const AttendanceManager = {
 
         window.setTimeout(async () => {
             await AttendanceManager.ensureFlatpickr();
-            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
+            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) {
+                window.setTimeout(async () => {
+                    await AttendanceManager.ensureFlatpickr();
+                    if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
+                    AttendanceManager._initFlatpickrInstance(input);
+                }, 2500);
+                return;
+            }
+            AttendanceManager._initFlatpickrInstance(input);
+        }, 300);
+    },
 
-            flatpickr("#attendance-date", {
+    _initFlatpickrInstance: (input) => {
+        flatpickr("#attendance-date", {
             defaultDate: AttendanceManager.currentDate,
             maxDate: "today",
             dateFormat: "Y-m-d",
