@@ -282,8 +282,7 @@ const AttendanceManager = {
                 AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
                 AttendanceManager.updateDateSelectionState(selectedDates[0]);
             }
-            });
-        }, 4000);
+        });
     },
 
     ensureFlatpickr: () => {

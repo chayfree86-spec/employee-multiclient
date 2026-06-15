@@ -55,34 +55,7 @@ const ReportsManager = {
 
     getDefaultReportPeriod: async () => {
         const now = new Date();
-        const fallback = { month: now.getMonth(), year: now.getFullYear() };
-
-        try {
-            const payrollRows = await ApiClient.listPayroll();
-            const generatedRows = (payrollRows || [])
-                .filter((row) => {
-                    const status = String(row.status || '').toLowerCase();
-                    return status === 'generated' || status === 'paid' || row.id;
-                })
-                .map((row) => ({
-                    month: Number(row.month || 0),
-                    year: Number(row.year || 0),
-                    id: Number(row.id || 0)
-                }))
-                .filter((row) => row.month >= 1 && row.month <= 12 && row.year > 0)
-                .sort((a, b) => (b.year - a.year) || (b.month - a.month) || (b.id - a.id));
-
-            if (generatedRows.length > 0) {
-                return {
-                    month: generatedRows[0].month - 1,
-                    year: generatedRows[0].year
-                };
-            }
-        } catch (error) {
-            console.error('Failed to load default report payroll period from backend', error);
-        }
-
-        return fallback;
+        return { month: now.getMonth(), year: now.getFullYear() };
     },
 
     renderExpandedStaffShell: (staff, sectionTitle, detailHtml, actionHtml = '') => `
