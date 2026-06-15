@@ -1,4 +1,4 @@
-const SalaryManager = {
+var SalaryManager = {
     isActiveStaff: (staff) => String(staff?.status || 'active').toLowerCase() === 'active',
 
     formatSalaryAmountWithHold: (amount, holdSource = null) => {
