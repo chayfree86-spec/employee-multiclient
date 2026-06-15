@@ -241,20 +241,9 @@ const AttendanceManager = {
 
         window.setTimeout(async () => {
             await AttendanceManager.ensureFlatpickr();
-            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) {
-                window.setTimeout(async () => {
-                    await AttendanceManager.ensureFlatpickr();
-                    if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
-                    AttendanceManager._initFlatpickrInstance(input);
-                }, 2500);
-                return;
-            }
-            AttendanceManager._initFlatpickrInstance(input);
-        }, 300);
-    },
+            if (typeof flatpickr !== 'function' || !document.getElementById('attendance-date') || input._flatpickr) return;
 
-    _initFlatpickrInstance: (input) => {
-        flatpickr("#attendance-date", {
+            flatpickr("#attendance-date", {
             defaultDate: AttendanceManager.currentDate,
             maxDate: "today",
             dateFormat: "Y-m-d",
@@ -282,7 +271,8 @@ const AttendanceManager = {
                 AttendanceManager.updateWeekdayDisplay(selectedDates[0]);
                 AttendanceManager.updateDateSelectionState(selectedDates[0]);
             }
-        });
+            });
+        }, 4000);
     },
 
     ensureFlatpickr: () => {
