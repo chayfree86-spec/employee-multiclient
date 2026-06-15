@@ -272,7 +272,7 @@ const AttendanceManager = {
                 AttendanceManager.updateDateSelectionState(selectedDates[0]);
             }
             });
-        }, 4000);
+        }, 200);
     },
 
     ensureFlatpickr: () => {

@@ -293,9 +293,9 @@ window.AppNavigation = {
             settings: ['settings.js']
         };
 
-        for (const filename of bundles[viewId] || []) {
-            await AppNavigation.loadScript(filename);
-        }
+        await Promise.all(
+            (bundles[viewId] || []).map((filename) => AppNavigation.loadScript(filename))
+        );
     },
 
     getCurrentView: () => {
