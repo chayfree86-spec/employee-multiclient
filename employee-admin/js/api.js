@@ -464,6 +464,16 @@ window.PhotoHelper = {
         if (!img) return;
         img.onerror = null;
         img.src = this.avatarUrl(encodedName, background, color, size);
+    },
+
+    smartPhoto(img, photoUrl, encodedName, background = 'random', color = 'fff', size = 80) {
+        if (!img) return;
+        img.onerror = null;
+        img.src = this.avatarUrl(encodedName, background, color, size);
+        if (!photoUrl) return;
+        const probe = new Image();
+        probe.onload = () => { img.src = photoUrl; };
+        probe.src = photoUrl;
     }
 };
 

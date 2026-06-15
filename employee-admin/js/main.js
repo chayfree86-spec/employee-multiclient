@@ -261,10 +261,16 @@ window.AppNavigation = {
         settings: '20260601-2'
     },
 
-    loadedScripts: new Set(Array.from(document.scripts)
-        .map((script) => script.getAttribute('src') || '')
-        .filter(Boolean)
-        .map((src) => src.split('?')[0].split('/').pop())),
+    loadedScripts: (() => {
+        const set = new Set(Array.from(document.scripts)
+            .map((script) => script.getAttribute('src') || '')
+            .filter(Boolean)
+            .map((src) => src.split('?')[0].split('/').pop()));
+        if (set.has('api.js')) {
+            set.add('salary.js');
+        }
+        return set;
+    })(),
 
     loadScript: (filename) => {
         if (AppNavigation.loadedScripts.has(filename)) return Promise.resolve();
