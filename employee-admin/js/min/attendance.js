@@ -788,8 +788,11 @@ const AttendanceManager = {
         const btnAbsent = document.getElementById('btn-mark-absent');
         const total = activeStaff.length;
 
+        // A day counts as "attendance marked" when it has saved records in the backend.
+        const hasSavedAttendance = Object.keys(AttendanceManager.currentAttendanceData || {}).length > 0;
+
         if (total > 0 && btnPresent && btnHoliday && btnAbsent) {
-            if (present === total) {
+            if (present === total || hasSavedAttendance) {
                 btnPresent.style.background = 'var(--success)';
                 btnPresent.style.color = 'white';
             } else {
