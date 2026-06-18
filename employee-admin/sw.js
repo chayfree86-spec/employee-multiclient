@@ -1,4 +1,4 @@
-const CACHE_NAME = 'employee-admin-v17';
+const CACHE_NAME = 'employee-admin-v18';
 const APP_SHELL = [
   '/employee-admin/attendance.html',
   '/employee-admin/index.html',
@@ -26,8 +26,8 @@ const APP_SHELL = [
   '/employee-admin/js/min/attendance.js?v=20260615-1',
   '/employee-admin/js/min/salary.js?v=20260615-1',
   '/employee-admin/js/min/reports.js?v=20260615-1',
-  '/employee-admin/js/min/main.js?v=20260615-1',
-  '/employee-admin/js/min/staff.js?v=20260601-1',
+  '/employee-admin/js/min/main.js?v=20260618-1',
+  '/employee-admin/js/min/staff.js?v=20260618-1',
   '/public/images/pwa-icon.png'
 ];
 

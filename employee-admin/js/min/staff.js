@@ -629,22 +629,10 @@ const StaffManager = {
         let month = selectedMonth;
         let year = selectedYear;
         if (month === null || year === null) {
-            const cyclePeriod = SalaryManager.getPreviousMonthYear();
-            let currentPayrollSummary = null;
-            let cyclePayrollSummary = null;
-            try {
-                currentPayrollSummary = await ApiClient.getPayrollSummary(Number(staffId), now.getMonth() + 1, now.getFullYear());
-                cyclePayrollSummary = await ApiClient.getPayrollSummary(Number(staffId), cyclePeriod.month + 1, cyclePeriod.year);
-            } catch (error) {
-                console.error('Failed to load backend payroll summary for profile default month', error);
-                container.innerHTML = '<h2>Backend staff profile data unavailable</h2>';
-                return;
-            }
-            const defaultPeriod = currentPayrollSummary?.is_already_generated || cyclePayrollSummary?.is_already_generated
-                ? { month: now.getMonth(), year: now.getFullYear() }
-                : cyclePeriod;
-            month = defaultPeriod.month;
-            year = defaultPeriod.year;
+            // Always default the staff profile to the current month for every
+            // admin/client, regardless of whether payroll has been generated yet.
+            month = now.getMonth();
+            year = now.getFullYear();
         }
         const paymentMonth = month;
         const paymentYear = year;
