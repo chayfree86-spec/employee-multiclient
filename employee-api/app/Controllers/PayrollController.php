@@ -146,12 +146,13 @@ class PayrollController extends BaseApiController
         $workingDays = $presentDays + ($halfDays * 0.5) + $holidayDays;
         $baseSalary = (float)($employee['monthly_salary'] ?? $estimated['base_salary'] ?? 0);
         $dailyRate = $daysDivisor > 0 ? ($baseSalary / $daysDivisor) : 0;
-        $markedAttendanceDays = $presentDays + $halfDays + $absentDays;
-        if ($payrollMode === 'monthly' && $markedAttendanceDays > 0) {
-            $earnedSalary = max(0, round($baseSalary - ($absentDays * $dailyRate) - ($halfDays * $dailyRate * 0.5), 0));
-        } else {
-            $earnedSalary = round($dailyRate * $workingDays, 0);
-        }
+        // Attendance-based earnings: Present + Holiday + Weekly-off + (Half x 0.5) are paid.
+        // Holiday & weekly-off count as paid working days; Absent and unmarked days are not.
+        // Monthly mode is capped at the full monthly salary (so a 31-day month never exceeds base).
+        $attendanceEarned = round($dailyRate * $workingDays, 0);
+        $earnedSalary = $payrollMode === 'monthly'
+            ? max(0, min($baseSalary, $attendanceEarned))
+            : $attendanceEarned;
         $holdDeduction = $releaseHoldRequested ? 0.0 : round((float)($holdCreatedThisMonth['total_hold_amount'] ?? 0), 0);
         $holdRelease = $releaseHoldRequested ? round((float)($holdInfo['total_hold_amount'] ?? 0), 0) : 0.0;
 

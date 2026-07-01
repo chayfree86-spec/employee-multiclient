@@ -77,12 +77,13 @@ class PayrollModel extends Model
         $weekendHolidayDays = $holidayDays + $weekendDays;
         $weekendAbsentDays = 0;
         $payrollMode = $settingsModel->getSetting('payroll_mode', 'monthly');
-        $markedAttendanceDays = $presentDays + $halfDays + $absentDays;
-        if ($payrollMode === 'monthly' && $markedAttendanceDays > 0) {
-            $salaryFromAttendance = (float) round($baseSalary - ($absentDays * $dailySalary) - ($halfDays * $dailySalary * 0.5), 0);
-        } else {
-            $salaryFromAttendance = (float)round(($presentDays * $dailySalary) + ($halfDays * $dailySalary * 0.5) + ($weekendHolidayDays * $dailySalary), 0);
-        }
+        // Attendance-based earnings: Present + Holiday + Weekly-off + (Half x 0.5) are paid.
+        // Holiday & weekly-off count as paid working days; Absent and unmarked days are not.
+        // Monthly mode is capped at the full monthly salary (so a 31-day month never exceeds base).
+        $attendanceEarned = round(($presentDays * $dailySalary) + ($halfDays * $dailySalary * 0.5) + ($weekendHolidayDays * $dailySalary), 0);
+        $salaryFromAttendance = $payrollMode === 'monthly'
+            ? (float) max(0, min($baseSalary, $attendanceEarned))
+            : (float) $attendanceEarned;
         $weekendHolidayAmount = 0;
 
         $totalSalary = $salaryFromAttendance + $weekendHolidayAmount + (float) $overtime - (float) $fine - (float) $advanceDeduction - (float) $deduction;
