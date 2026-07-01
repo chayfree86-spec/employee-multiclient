@@ -19,7 +19,8 @@ class EmployeeController extends BaseApiController
         $payrollModel = new \EmployeeApi\Models\PayrollModel();
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
         
-        $employees = $model->where('user_id', $userId)->findAll();
+        // Alphabetical staff order everywhere (attendance, staff, salary, reports, profile).
+        $employees = $model->where('user_id', $userId)->orderBy('name', 'ASC')->findAll();
         
         $month = (int) date('n');
         $year = (int) date('Y');
