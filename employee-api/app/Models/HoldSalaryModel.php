@@ -132,4 +132,25 @@ class HoldSalaryModel extends Model
             'total_hold_amount' => (float)($row['total'] ?? 0),
         ];
     }
+
+    /**
+     * Hold salary is deducted only ONCE - in the month the hold was created
+     * (e.g. when a new staff joins and their first salary is generated).
+     * This returns the original hold amount created in the given month so it is
+     * never re-deducted in subsequent months. Uses initial_hold_days * daily_rate
+     * so a later partial release does not change the original creation-month amount.
+     */
+    public function getHoldCreatedInMonth(int $employeeId, int $month, int $year): array
+    {
+        $row = $this->select('SUM(initial_hold_days * daily_rate) as amount, SUM(initial_hold_days) as days')
+            ->where('employee_id', $employeeId)
+            ->where('MONTH(created_at)', $month)
+            ->where('YEAR(created_at)', $year)
+            ->first();
+
+        return [
+            'total_hold_days' => (float)($row['days'] ?? 0),
+            'total_hold_amount' => (float)round((float)($row['amount'] ?? 0), 0),
+        ];
+    }
 }

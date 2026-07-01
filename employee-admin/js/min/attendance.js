@@ -93,20 +93,32 @@ const AttendanceManager = {
         AttendanceManager.updateWeekdayDisplay(current);
     },
 
+    // Outstanding advance = (advances given up to month end) - (repayments up to month end).
+    // Pass rows with employee_id (they get filtered) or pre-filtered rows for one staff.
+    advanceOutstandingAsOf: (rows, staffId, year, month) => {
+        const endTs = new Date(year, month + 1, 0, 23, 59, 59).getTime();
+        let balance = 0;
+        (rows || []).forEach((entry) => {
+            if (entry.employee_id != null && String(entry.employee_id) !== String(staffId)) return;
+            if (!entry.date) return;
+            const amount = Number(entry.amount) || 0;
+            if (amount <= 0) return;
+            if (new Date(`${entry.date}T00:00:00`).getTime() > endTs) return;
+            if (entry.type === 'advance') balance += amount;
+            else if (entry.type === 'advance_paid') balance -= amount;
+        });
+        return balance;
+    },
+
     hasAdvanceInCurrentViewMonth: (staffId) => {
         const currentDate = new Date(`${AttendanceManager.currentDate}T00:00:00`);
-        const month = currentDate.getMonth();
-        const year = currentDate.getFullYear();
-
-        return (AttendanceManager.currentAofRows || []).some((entry) => {
-            if (String(entry.employee_id) !== String(staffId)) return false;
-            if (entry.type !== 'advance' || (Number(entry.amount) || 0) <= 0 || !entry.date) {
-                return false;
-            }
-
-            const entryDate = new Date(`${entry.date}T00:00:00`);
-            return entryDate.getMonth() === month && entryDate.getFullYear() === year;
-        });
+        // Advance stays flagged every month until it is fully repaid (advance_paid).
+        return AttendanceManager.advanceOutstandingAsOf(
+            AttendanceManager.currentAofRows,
+            staffId,
+            currentDate.getFullYear(),
+            currentDate.getMonth()
+        ) > 0;
     },
 
     hasDeductionInCurrentViewMonth: (staffId) => {

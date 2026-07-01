@@ -315,18 +315,50 @@ const StaffManager = {
         ) || null;
     },
 
+    // Outstanding advance = (advances given up to month end) - (repayments up to month end).
+    // Pass rows with employee_id (they get filtered) or pre-filtered rows for one staff.
+    advanceOutstandingAsOf: (rows, staffId, year, month) => {
+        const endTs = new Date(year, month + 1, 0, 23, 59, 59).getTime();
+        let balance = 0;
+        (rows || []).forEach((entry) => {
+            if (entry.employee_id != null && String(entry.employee_id) !== String(staffId)) return;
+            if (!entry.date) return;
+            const amount = Number(entry.amount) || 0;
+            if (amount <= 0) return;
+            if (new Date(`${entry.date}T00:00:00`).getTime() > endTs) return;
+            if (entry.type === 'advance') balance += amount;
+            else if (entry.type === 'advance_paid') balance -= amount;
+        });
+        return balance;
+    },
+
     getCurrentMonthIndicators: (month = new Date().getMonth(), year = new Date().getFullYear(), aofRows = null) => {
         if (Array.isArray(aofRows)) {
             const advanceIds = new Set();
             const deductionIds = new Set();
+            const endTs = new Date(year, month + 1, 0, 23, 59, 59).getTime();
+            const advanceBalance = {};
 
             aofRows.forEach((entry) => {
                 if (!entry?.date || (Number(entry.amount) || 0) <= 0) return;
                 const date = new Date(`${entry.date}T00:00:00`);
-                if (date.getMonth() !== month || date.getFullYear() !== year) return;
 
-                if (entry.type === 'advance') advanceIds.add(String(entry.employee_id));
-                if (entry.type === 'fine' || entry.type === 'deduction') deductionIds.add(String(entry.employee_id));
+                // Payment deduction star stays month-specific.
+                if ((entry.type === 'fine' || entry.type === 'deduction')
+                    && date.getMonth() === month && date.getFullYear() === year) {
+                    deductionIds.add(String(entry.employee_id));
+                }
+
+                // Advance stays flagged until repaid: track running balance up to month end.
+                if (date.getTime() <= endTs && (entry.type === 'advance' || entry.type === 'advance_paid')) {
+                    const id = String(entry.employee_id);
+                    advanceBalance[id] = (advanceBalance[id] || 0)
+                        + (entry.type === 'advance' ? 1 : -1) * (Number(entry.amount) || 0);
+                }
+            });
+
+            Object.entries(advanceBalance).forEach(([id, balance]) => {
+                if (balance > 0) advanceIds.add(id);
             });
 
             return { advanceIds, deductionIds };
@@ -337,17 +369,18 @@ const StaffManager = {
         const advanceIds = new Set();
         const deductionIds = new Set();
 
+        const advanceEndTs = new Date(year, month + 1, 0, 23, 59, 59).getTime();
         Object.entries(advances).forEach(([staffId, entries]) => {
-            if ((entries || []).some((entry) => {
-                if (entry.type !== 'paid' || (Number(entry.amount) || 0) <= 0 || !entry.date) {
-                    return false;
-                }
-
-                const date = new Date(`${entry.date}T00:00:00`);
-                return date.getMonth() === month && date.getFullYear() === year;
-            })) {
-                advanceIds.add(String(staffId));
-            }
+            let balance = 0;
+            (entries || []).forEach((entry) => {
+                const amount = Number(entry.amount) || 0;
+                if (amount <= 0 || !entry.date) return;
+                if (new Date(`${entry.date}T00:00:00`).getTime() > advanceEndTs) return;
+                // normalizeAof maps advance->'paid' (given), advance_paid->'received' (repayment)
+                if (entry.type === 'paid') balance += amount;
+                else if (entry.type === 'received') balance -= amount;
+            });
+            if (balance > 0) advanceIds.add(String(staffId));
         });
 
         Object.entries(fines).forEach(([staffId, entries]) => {
@@ -645,7 +678,7 @@ const StaffManager = {
                 ApiClient.listEmployees(),
                 ApiClient.getPayrollSummary(Number(staffId), paymentMonth + 1, paymentYear),
                 ApiClient.getAttendanceByEmployeeMonth(Number(staffId), paymentMonth + 1, paymentYear),
-                ApiClient.listAof(paymentMonth + 1, paymentYear, staffId)
+                ApiClient.listAof(null, null, staffId)
             ]);
             StaffManager.currentStaffList = (employees || []).map((employee) => ApiSyncManager.normalizeEmployee(employee));
             staff = StaffManager.currentStaffList.find(s => String(s.id) === String(staffId));
@@ -720,7 +753,8 @@ const StaffManager = {
             const d = new Date(`${entry.date}T00:00:00`);
             return d.getMonth() === paymentMonth && d.getFullYear() === paymentYear;
         };
-        const hasAdvanceInPaymentMonth = staffAofRows.some((entry) => entry.type === 'advance' && isInPaymentMonth(entry));
+        // Advance star stays lit every month until the advance is fully repaid.
+        const hasAdvanceInPaymentMonth = StaffManager.advanceOutstandingAsOf(staffAofRows, staffId, paymentYear, paymentMonth) > 0;
         const hasDeductionInPaymentMonth = staffAofRows.some((entry) => ['fine', 'deduction'].includes(entry.type) && isInPaymentMonth(entry));
 
         container.innerHTML = `

@@ -116,6 +116,9 @@ class PayrollController extends BaseApiController
         // Get hold salary info
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
         $holdInfo = $holdModel->getTotalHoldForEmployee((int)$employeeId);
+        // Hold is deducted only once - in the month it was created. Later months keep
+        // showing it as a standing liability (hold_info) but never deduct it again.
+        $holdCreatedThisMonth = $holdModel->getHoldCreatedInMonth((int)$employeeId, (int)$month, (int)$year);
 
         $settingsModel = new \EmployeeApi\Models\SettingsModel();
         $daysDivisor = $settingsModel->getDaysDivisor((int)$month, (int)$year);
@@ -149,7 +152,7 @@ class PayrollController extends BaseApiController
         } else {
             $earnedSalary = round($dailyRate * $workingDays, 0);
         }
-        $holdDeduction = $releaseHoldRequested ? 0.0 : round((float)($holdInfo['total_hold_amount'] ?? 0), 0);
+        $holdDeduction = $releaseHoldRequested ? 0.0 : round((float)($holdCreatedThisMonth['total_hold_amount'] ?? 0), 0);
         $holdRelease = $releaseHoldRequested ? round((float)($holdInfo['total_hold_amount'] ?? 0), 0) : 0.0;
 
         $beforeAdvance = max(0, round($earnedSalary + (float)$sums['overtime'] - (float)$sums['fine'] - (float)$sums['deduction'] - $holdDeduction + $holdRelease, 0));
@@ -331,9 +334,11 @@ class PayrollController extends BaseApiController
                 continue;
             }
 
-            // Hold salary logic
+            // Hold salary logic - deduct the hold only in the month it was created
+            // (one-time, e.g. first salary after joining), not every month.
             $activeHoldInfo = $holdModel->getTotalHoldForEmployee((int)$currEmpId);
-            $holdAmount = $releaseHold ? 0.0 : round((float)($activeHoldInfo['total_hold_amount'] ?? 0), 0);
+            $holdCreatedThisMonth = $holdModel->getHoldCreatedInMonth((int)$currEmpId, (int)$month, (int)$year);
+            $holdAmount = $releaseHold ? 0.0 : round((float)($holdCreatedThisMonth['total_hold_amount'] ?? 0), 0);
             $releasedAmount = 0.0;
             if ($releaseHold && (float)($activeHoldInfo['total_hold_days'] ?? 0) > 0) {
                 $releasedAmount = $holdModel->releaseHold((int)$currEmpId, (float)$activeHoldInfo['total_hold_days']);
