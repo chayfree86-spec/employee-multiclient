@@ -15,72 +15,24 @@ class EmployeeController extends BaseApiController
         if (!is_int($userId)) return $userId;
 
         $model = new EmployeeModel();
-        $attendanceModel = new \EmployeeApi\Models\AttendanceModel();
-        $payrollModel = new \EmployeeApi\Models\PayrollModel();
         $holdModel = new \EmployeeApi\Models\HoldSalaryModel();
-        
+
         // Alphabetical staff order everywhere (attendance, staff, salary, reports, profile).
         $employees = $model->where('user_id', $userId)->orderBy('name', 'ASC')->findAll();
-        
-        $month = (int) date('n');
-        $year = (int) date('Y');
-        $today = date('Y-m-d');
-        $settingsModel = new \EmployeeApi\Models\SettingsModel();
-        $daysDivisor = $settingsModel->getDaysDivisor($month, $year);
-        $payrollMode = $settingsModel->getSetting('payroll_mode', 'monthly');
 
+        // Only attach the active hold info that the app actually uses from this list
+        // (one grouped query, not one per employee). Per-employee attendance / earned
+        // salary / advance summaries are intentionally NOT computed here - they were
+        // unused by the client and made this endpoint slow. The salary and profile
+        // screens fetch those per-staff via the payroll summary endpoint instead.
+        $holdMap = $holdModel->getActiveHoldMap(array_map(static fn ($e) => (int)$e['id'], $employees));
         foreach ($employees as &$emp) {
-            $summary = $attendanceModel->getAttendanceSummaryEnriched((int)$emp['id'], $month, $year, $today, $emp['join_date']);
-
-            $present = 0;
-            $weekend = 0;
-            $holiday = 0;
-            $halfDay = 0;
-            $absent = 0;
-
-            foreach ($summary as $s) {
-                switch ($s['status']) {
-                    case 'present': $present = (int)$s['count']; break;
-                    case 'half_day': $halfDay = (int)$s['count']; break;
-                    case 'weekend': $weekend = (int)$s['count']; break;
-                    case 'holiday': $holiday = (int)$s['count']; break;
-                    case 'absent': $absent = (int)$s['count']; break;
-                }
-            }
-
-            // Total Days = Present + Weekend + Holiday + (Half Day * 0.5)
-            $totalDaysForSal = $present + $weekend + $holiday + ($halfDay * 0.5);
-            $emp['total_present_days'] = round($totalDaysForSal, 1);
-            $emp['weekend_count'] = $weekend;
-            $emp['holiday_count'] = $holiday;
-            $emp['present_only_count'] = $present;
-
-            // Calculate earned salary so far (based on settings-driven day divisor)
-            $monthlySalary = (float)($emp['monthly_salary'] ?? 0);
-            $dailySalary = $monthlySalary / $daysDivisor;
-
-            if ($payrollMode === 'monthly') {
-                $weekdayStatus = $attendanceModel->getWeekdayAttendanceStatus((int)$emp['id'], $month, $year, $today, $emp['join_date']);
-                $weekendAbsent = $weekdayStatus['weekend_absent_count'] ?? 0;
-                $baseEarned = $monthlySalary - ($absent * $dailySalary) - ($halfDay * $dailySalary * 0.5) - ($weekendAbsent * $dailySalary);
-            } else {
-                $baseEarned = $totalDaysForSal * $dailySalary;
-            }
-            
-            // Subtract monthly adjustments (fines, deductions)
-            $aofModel = new \EmployeeApi\Models\AdvanceOvertimeFineModel();
-            $sums = $aofModel->getSumsForEmployeeMonth((int)$emp['id'], $month, $year);
-            $emp['earned_salary'] = round($baseEarned - ($sums['fine'] ?? 0) - ($sums['deduction'] ?? 0), 0);
-            
-            // Get pending advance
-            $advanceInfo = $payrollModel->getPendingAdvanceForEmployee((int)$emp['id']);
-            $emp['pending_advance'] = (float)$advanceInfo['remaining'];
-
-            $holdInfo = $holdModel->getTotalHoldForEmployee((int)$emp['id']);
-            $emp['active_hold_days'] = (float)($holdInfo['total_hold_days'] ?? 0);
-            $emp['active_hold_amount'] = (float)($holdInfo['total_hold_amount'] ?? 0);
+            $hold = $holdMap[(int)$emp['id']] ?? ['total_hold_days' => 0, 'total_hold_amount' => 0];
+            $emp['active_hold_days'] = (float)$hold['total_hold_days'];
+            $emp['active_hold_amount'] = (float)$hold['total_hold_amount'];
         }
-        
+        unset($emp);
+
         return $this->respondSuccess($employees, 'Employees retrieved successfully');
     }
 

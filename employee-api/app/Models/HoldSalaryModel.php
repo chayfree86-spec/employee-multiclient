@@ -134,6 +134,34 @@ class HoldSalaryModel extends Model
     }
 
     /**
+     * Active hold totals for many employees in a single grouped query.
+     * Returns [employee_id => ['total_hold_days' => x, 'total_hold_amount' => y]].
+     * Used by the employee list so it doesn't run one query per employee.
+     */
+    public function getActiveHoldMap(array $employeeIds): array
+    {
+        $employeeIds = array_values(array_unique(array_map('intval', $employeeIds)));
+        if ($employeeIds === []) {
+            return [];
+        }
+
+        $rows = $this->select('employee_id, SUM(remaining_hold_days) as days, SUM(total) as amount')
+            ->whereIn('employee_id', $employeeIds)
+            ->where('status', self::STATUS_ACTIVE)
+            ->groupBy('employee_id')
+            ->findAll();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int)$row['employee_id']] = [
+                'total_hold_days' => (float)($row['days'] ?? 0),
+                'total_hold_amount' => (float)($row['amount'] ?? 0),
+            ];
+        }
+        return $map;
+    }
+
+    /**
      * Hold salary is deducted only ONCE - in the month the hold was created
      * (e.g. when a new staff joins and their first salary is generated).
      * This returns the original hold amount created in the given month so it is
